@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+    
+    <!-- Настройки для установки PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#050509">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+
+    <title>Калькулятор МАКСИМ • ЦЕХ №4</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap');
+        
+        :root {
+            --bg-main: #050509;
+            --bg-panel: rgba(13, 13, 23, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --blur-std: blur(25px);
+            --cyan: #00f2ff;
+            --cyan-glow: rgba(0, 242, 255, 0.3);
+            --gold: #ffc107;
+            --green: #0cf3a9;
+            --text-p: #ffffff;
+            --text-s: rgba(255, 255, 255, 0.5);
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body { 
+            background: var(--bg-main); 
+            min-height: 100vh; 
+            padding: calc(20px + env(safe-area-inset-top)) 15px calc(20px + env(safe-area-inset-bottom)); 
+            color: var(--text-p); 
+            display: flex; 
+            justify-content: center;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+            position: relative;
+        }
+
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            width: 350px;
+            height: 350px;
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.12;
+            animation: float 15s infinite alternate ease-in-out;
+        }
+        body::before { background: var(--cyan); top: -5%; left: -10%; }
+        body::after { background: #7000ff; bottom: -5%; right: -10%; animation-delay: -7s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, 40px) scale(1.15); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .app-wrapper { 
+            width: 100%; 
+            max-width: 460px; 
+            animation: fadeInUp 0.6s var(--ease-out);
+            z-index: 1;
+        }
+        
+        header { 
+            background: var(--bg-panel); 
+            backdrop-filter: var(--blur-std); -webkit-backdrop-filter: var(--blur-std);
+            border: 1px solid var(--glass-border); 
+            padding: 20px; 
+            border-radius: 20px; 
+            margin-bottom: 15px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        header h1 { 
+            font-size: 13px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 0.15em; 
+            color: #fff;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px; background: var(--green); border-radius: 50%;
+            box-shadow: 0 0 10px var(--green);
+        }
+        
+        .main-card { 
+            background: var(--bg-panel); 
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            padding: 25px 20px; 
+            border-radius: 28px; 
+            border: 1px solid var(--glass-border); 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .inputs-group { display: flex; gap: 12px; margin-bottom: 20px; }
+        .input-box { flex: 1; transition: transform 0.3s var(--ease-out); }
+        .input-box.vol { flex: 1.5; }
+        .input-box:focus-within { transform: translateY(-3px); }
+        
+        label { 
+            display: block; margin-bottom: 8px; font-size: 10px; font-weight: 700; 
+            color: var(--text-s); text-transform: uppercase; letter-spacing: 0.1em; padding-left: 4px;
+        }
+        
+        .field-wrap { 
+            position: relative; display: flex; align-items: center; 
+            border-radius: 16px; transition: box-shadow 0.3s var(--ease-out);
+        }
+        .field-wrap:focus-within { box-shadow: 0 0 20px var(--cyan-glow); }
+        
+        .field-prefix { 
+            position: absolute; left: 18px; font-size: 20px; font-weight: 800; 
+            color: var(--cyan); pointer-events: none; opacity: 0.8; font-family: 'JetBrains Mono', monospace;
+        }
+        
+        input { 
+            width: 100%; height: 60px; 
+            background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            padding: 0 18px; 
+            color: #fff; font-size: 22px; font-weight: 700; 
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s var(--ease-out); 
+        }
+
+        input#density_tail { padding-left: 48px; color: var(--cyan); }
+        input:focus { border-color: var(--cyan); background: rgba(0, 242, 255, 0.05); }
+        
+        .clear-btn {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--text-s); font-size: 22px;
+            cursor: pointer; display: none; padding: 5px; z-index: 2;
+        }
+        .field-wrap:hover .clear-btn { display: block; }
+        
+        #results_container { display: flex; flex-direction: column; gap: 12px; }
+
+        .result-item { 
+            padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border); 
+            display: none; 
+            animation: fadeInUp 0.4s var(--ease-out);
+            position: relative; overflow: hidden;
+        }
+        
+        .result-item::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            transform: skewX(-25deg); transition: 0.75s;
+        }
+        .result-item:hover::after { left: 150%; }
+
+        .res-primary { border-left: 4px solid var(--cyan); background: linear-gradient(90deg, rgba(0, 242, 255, 0.03) 0%, transparent 100%); }
+        .res-secondary { border-left: 4px solid var(--gold); background: linear-gradient(90deg, rgba(255, 193, 7, 0.03) 0%, transparent 100%); }
+        .res-price { background: rgba(12, 243, 169, 0.04); border: 1px solid rgba(12, 243, 169, 0.15); }
+        
+        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .res-label { font-size: 10px; text-transform: uppercase; color: var(--text-s); font-weight: 700; letter-spacing: 0.1em; }
+        
+        .res-data, .price-total, .sum-val { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.05em; 
+            font-variant-numeric: tabular-nums;
+        }
+        .res-data span { font-size: 16px; font-weight: 500; opacity: 0.7; margin-left: 4px; font-family: 'Inter'; }
+        
+        #status_initial {
+            padding: 30px 20px; border: 1px dashed rgba(0, 242, 255, 0.3);
+            text-align: center; background: rgba(0, 242, 255, 0.01);
+        }
+        .status-ready {
+            font-size: 15px !important; color: var(--cyan); font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .pulse-icon { font-size: 10px; animation: blink 1.5s infinite; filter: drop-shadow(0 0 5px var(--cyan)); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .tag { 
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 10px; background: rgba(0,0,0,0.4); border-radius: 8px; 
+            font-size: 11px; color: #fff; font-weight: 600; 
+        }
+        
+        .chem-list { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.7; font-weight: 500;}
+        .chem-list b { color: #fff; font-weight: 700; font-family: 'JetBrains Mono'; }
+        
+        .price-total { font-size: 32px; font-weight: 900; color: var(--green); text-shadow: 0 0 15px rgba(12, 243, 169, 0.2); }
+        .price-total span { font-size: 18px; margin-right: 4px; font-family: 'Inter'; }
+        
+        .footer-summary { 
+            margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); 
+            border-radius: 16px; border: 1px solid var(--glass-border);
+            display: none; justify-content: space-around;
+        }
+        .sum-item { text-align: center; }
+        .sum-label { font-size: 9px; text-transform: uppercase; color: var(--text-s); letter-spacing: 0.1em; margin-bottom: 4px; }
+        .sum-val { font-size: 15px; }
+
+        .copyright { 
+            text-align: center; margin-top: 30px; font-family: 'Fira Sans', sans-serif;
+            font-weight: 900; font-size: 12px; letter-spacing: 0.15em; 
+            color: #ffffff; text-transform: uppercase; opacity: 0.8;
+        }
+        
+        .btn-info-float { 
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; 
+            background: var(--cyan); border: none; border-radius: 50%; 
+            color: #000; font-size: 20px; cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.4); z-index: 100;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .btn-info-float:hover { transform: scale(1.1) rotate(15deg); }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+        .modal-content { background: #0a0a12; border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; width: 100%; max-width: 380px; position: relative; }
+
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <header>
+        <h1>Калькулятор МАКСИМ</h1>
+        <div class="status-dot"></div>
+    </header>
+    
+    <div class="main-card">
+        <div class="inputs-group">
+            <div class="input-box">
+                <label>Плотность</label>
+                <div class="field-wrap">
+                    <span class="field-prefix">1.</span>
+                    <input type="number" id="density_tail" placeholder="00" inputmode="decimal" maxlength="2">
+                </div>
+            </div>
+            
+            <div class="input-box vol">
+                <label>Объём (м³)</label>
+                <div class="field-wrap">
+                    <input type="text" id="volume_input" placeholder="0.00" inputmode="decimal">
+                    <button class="clear-btn" id="reset_btn">×</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="results_container">
+            <div id="status_initial" class="result-item" style="display: block;">
+                <div class="res-label">Система активна</div>
+                <div class="status-ready">
+                    <span class="pulse-icon">●</span> Максим готов к расчёту
+                </div>
+            </div>
+
+            <div id="res_main" class="result-item res-primary"></div>
+            <div id="res_alt" class="result-item res-secondary"></div>
+            <div id="res_chem" class="result-item res-chem"></div>
+            <div id="res_price" class="result-item res-price"></div>
+        </div>
+
+        <div id="footer_area" class="footer-summary">
+            <div class="sum-item">
+                <div class="sum-label">Время</div>
+                <div id="total_time" class="sum-val">--</div>
+            </div>
+            <div class="sum-item">
+                <div class="sum-label">Вес</div>
+                <div id="total_weight" class="sum-val" style="color: var(--green)">--</div>
+            </div>
+        </div>
+        
+        <div class="copyright">ЦЕХ № 4 • Горшковский РУС</div>
+    </div>
+</div>
+
+<button class="btn-info-float" onclick="toggleModal()">ℹ️</button>
+
+<div id="infoModal" class="modal-overlay" onclick="toggleModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--cyan)">●</span> О приложении
+        </div>
+        <div style="font-size: 13px; line-height: 1.8; color: var(--text-s);">
+            • <b style="color:#fff">Калькулятор Максим:</b> Может автоматически рассчитать плотность, объём, вес, добавки, время и стоимость.<br>
+            • <b style="color:#fff">Приложение:</b> Для быстрого подсчёта выдачи нужного объёма раствора.<br>
+        </div>
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 12px; font-weight: 700;">
+            <span style="color: var(--text-s); text-transform: uppercase; letter-spacing: 1px;">Разработчик:</span> 
+            <span style="color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow);">Федосеенко М. Ю.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const D_INPUT = document.getElementById('density_tail');
+    const V_INPUT = document.getElementById('volume_input');
+    const RESET_BTN = document.getElementById('reset_btn');
+    const INIT_STATUS = document.getElementById('status_initial');
+    const FOOTER = document.getElementById('footer_area');
+
+    const CONST = {
+        price: { d118: 4.29816, d148: 26.41123 },
+        time: { galit: 45, water: 45, nitrate: 40 }
+    };
+
+    window.onload = () => D_INPUT.focus();
+
+    D_INPUT.addEventListener('input', function() {
+        if (this.value.length > 2) this.value = this.value.slice(0, 2);
+        if (this.value.length === 2) V_INPUT.focus();
+        calculate();
+    });
+
+    V_INPUT.addEventListener('input', function() {
+        this.value = this.value.replace(',', '.');
+        calculate();
+    });
+    
+    V_INPUT.addEventListener('keydown', (e) => { if (e.key === 'Enter') V_INPUT.blur(); });
+
+    RESET_BTN.addEventListener('click', () => {
+        D_INPUT.value = ''; V_INPUT.value = '';
+        calculate(); D_INPUT.focus();
+    });
+
+    const fmt = {
+        vol: (v) => {
+            if (!v || v < 0.001) return "0<span>л</span>";
+            let l = Math.round(v * 1000);
+            let m3 = Math.floor(l / 1000);
+            l = l % 1000;
+            return m3 === 0 ? `${l}<span>л</span>` : `${m3}<span>м³</span> ${l}<span>л</span>`;
+        },
+        w: (kg) => kg >= 1000 ? `${(kg / 1000).toFixed(3)} <span>т</span>` : `${Math.round(kg)} <span>кг</span>`,
+        money: (num) => num.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+        time: (sec) => {
+            sec = Math.round(sec);
+            let m = Math.floor(sec / 60);
+            let s = sec % 60;
+            return `${m}м ${s.toString().padStart(2, '0')}с`;
+        }
+    };
+
+    function calculate() {
+        const dRaw = D_INPUT.value;
+        const vRaw = V_INPUT.value;
+        const vol = parseFloat(vRaw);
+        
+        RESET_BTN.style.display = (dRaw || vRaw) ? 'block' : 'none';
+
+        if (!dRaw || dRaw.length < 2 || !vRaw || isNaN(vol) || vol <= 0) {
+            toggleResults(false);
+            return;
+        }
+
+        toggleResults(true);
+
+        const d = parseFloat("1." + dRaw);
+        const DOM = {
+            main: document.getElementById('res_main'),
+            alt: document.getElementById('res_alt'),
+            chem: document.getElementById('res_chem'),
+            price: document.getElementById('res_price')
+        };
+
+        let data = { m: {}, a: {}, chem: '', cost: 0, w: 0 };
+
+        if (d <= 1.18) {
+            data.m.val = (d >= 1.18) ? vol : vol * (d - 1.0) / 0.18;
+            data.a.val = Math.max(0, vol - data.m.val);
+            data.m.lab = "Галит 1.18"; data.a.lab = "Вода";
+            data.m.t = data.m.val * CONST.time.galit; data.a.t = data.a.val * CONST.time.water;
+            data.m.w = data.m.val * 1180; data.a.w = data.a.val * 1000;
+            data.chem = `🧪 SCIMOL: <b>${(vol * 0.2067).toFixed(1)} л</b><br>🧪 АЗОЛ: <b>${(vol * 0.01).toFixed(2)} л</b><br>🧪 ГФ-1: <b>${(vol * 0.0127).toFixed(3)} л</b>`;
+            data.cost = (data.m.val * 1000) * CONST.price.d118;
+            data.priceDet = `1.18: ₽ ${fmt.money(data.cost)}`;
+        } else {
+            data.m.val = ((1.48 - d) / 0.3) * vol;
+            data.a.val = Math.max(0, vol - data.m.val);
+            data.m.lab = "Галит 1.18"; data.a.lab = "Нитрат 1.48";
+            data.m.t = data.m.val * CONST.time.galit; data.a.t = data.a.val * CONST.time.nitrate;
+            data.m.w = data.m.val * 1180; data.a.w = data.a.val * 1480;
+            data.chem = `🧪 SCIMOL: <b>${(vol * 5.23).toFixed(1)} л</b><br>🧪 ГФ-1: <b>${(vol * 0.0294).toFixed(3)} л</b>`;
+            let cM = (data.m.val * 1000) * CONST.price.d118;
+            let cA = (data.a.val * 1000) * CONST.price.d148;
+            data.cost = cM + cA;
+            data.priceDet = `1.18: ₽ ${fmt.money(cM)}<br>1.48: ₽ ${fmt.money(cA)}`;
+        }
+
+        renderResCard(DOM.main, data.m);
+        renderResCard(DOM.alt, data.a);
+        
+        DOM.chem.innerHTML = `<div class="res-label">Добавки</div><div class="chem-list">${data.chem}</div>`;
+        DOM.price.innerHTML = `<div class="res-header"><div class="res-label">Стоимость материалов</div></div>
+                               <div class="chem-list" style="margin-bottom:10px">${data.priceDet}</div>
+                               <div class="price-total"><span>₽</span>${fmt.money(data.cost)}</div>`;
+        
+        document.getElementById('total_time').innerText = fmt.time(data.m.t + data.a.t);
+        document.getElementById('total_weight').innerHTML = fmt.w(data.m.w + data.a.w);
+    }
+
+    function renderResCard(el, d) {
+        if (d.val < 0.001) { el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = `<div class="res-header"><div class="res-label">${d.lab}</div>
+                        <div class="tag-container" style="display:flex; gap:5px;">
+                            <div class="tag">⏱️ ${fmt.time(d.t)}</div>
+                            <div class="tag" style="background:rgba(255,255,255,0.05)">⚖️ ${fmt.w(d.w)}</div>
+                        </div></div>
+                        <div class="res-data">${fmt.vol(d.val)}</div>`;
+    }
+
+    function toggleResults(show) {
+        INIT_STATUS.style.display = show ? 'none' : 'block';
+        FOOTER.style.display = show ? 'flex' : 'none';
+        const cards = document.querySelectorAll('#results_container .result-item:not(#status_initial)');
+        cards.forEach(c => c.style.display = show ? 'block' : 'none');
+    }
+
+    function toggleModal() {
+        const modal = document.getElementById('infoModal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    // Регистрация Service Worker для PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW зарегистрирован'))
+                .catch(err => console.log('Ошибка SW:', err));
+        });
+    }
+</script>
+</body>
+</html>
