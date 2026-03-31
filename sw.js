@@ -1,50 +1,33 @@
-// sw.js — минимальный сервис-воркер для кэширования приложения (offline-доступ)
-
-const CACHE_NAME = 'ceh4-calculator-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',           // или имя вашего HTML-файла, если не index.html
-  'icons/icon-192.png',
-  'icons/icon-512.png'
-  // Добавьте сюда другие файлы, если они есть: CSS, внешние шрифты и т.д.
-  // Например: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'
+const CACHE_NAME = 'maxim-calc-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-self.addEventListener('install', event => {
+// Установка: кешируем файлы
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Кэшируем статические файлы');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  // Пропустить ожидание, чтобы новый SW сразу активировался
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+// Активация: чистим старый кеш
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
-      );
+    caches.keys().then((keys) => {
+      return Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
     })
   );
-  // Взять контроль над страницами сразу
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
+// Работа в офлайне
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Если в кэше — отдаём оттуда (быстро и оффлайн)
-        if (response) {
-          return response;
-        }
-        // Иначе — идём в сеть
-        return fetch(event.request);
-      })
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
