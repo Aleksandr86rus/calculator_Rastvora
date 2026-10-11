@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030307">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+
+    <title>Калькулятор МАКСИМ • ЦЕХ №4</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800;900&display=swap');
+        
+        :root {
+            --bg-main: #05060b;
+            --bg-card: rgba(14, 16, 28, 0.75);
+            --bg-card-sub: rgba(22, 26, 45, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.09);
+            --cyan: #00f2ff;
+            --cyan-glow: rgba(0, 242, 255, 0.35);
+            --gold: #ffbe1a;
+            --gold-glow: rgba(255, 190, 26, 0.35);
+            --nitrate-color: #d946ef;
+            --nitrate-glow: rgba(217, 70, 239, 0.35);
+            --green: #0cf3a9;
+            --green-glow: rgba(12, 243, 169, 0.35);
+            --red: #ff334b;
+            --red-glow: rgba(255, 51, 75, 0.45);
+            --text-p: #ffffff;
+            --text-s: rgba(255, 255, 255, 0.55);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
+        
+        body { 
+            background: var(--bg-main); 
+            min-height: 100vh; 
+            padding: calc(18px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom)); 
+            color: var(--text-p); 
+            display: flex; 
+            justify-content: center;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+            position: relative;
+        }
+
+        /* Неоновые фоновые пятна */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            width: 380px;
+            height: 380px;
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.15;
+            animation: float 16s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+        body::before { background: var(--cyan); top: -8%; left: -12%; }
+        body::after { background: #8c4bff; bottom: -10%; right: -12%; animation-delay: -8s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, 40px) scale(1.15); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(14px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .app-wrapper { 
+            width: 100%; 
+            max-width: 460px; 
+            animation: fadeInUp 0.5s var(--ease-out);
+            z-index: 1;
+            position: relative;
+        }
+        
+        /* ШАПКА */
+        header { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border); 
+            padding: 16px 20px; 
+            border-radius: 22px; 
+            margin-bottom: 14px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        header h1 { 
+            font-size: 13px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 0.14em; 
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        header h1::before {
+            content: ''; display: inline-block; width: 8px; height: 8px;
+            background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 4px; }
+        .btn-icon {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            width: 42px; height: 42px; border-radius: 13px; font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+            color: #fff;
+        }
+        .btn-icon:hover { background: rgba(0, 242, 255, 0.12); border-color: var(--cyan); }
+        .btn-icon:active { transform: scale(0.94); }
+        
+        .main-card { 
+            background: var(--bg-card); 
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            padding: 22px 18px; 
+            border-radius: 28px; 
+            border: 1px solid var(--glass-border); 
+            box-shadow: 0 24px 60px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        /* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */
+        .mode-switcher {
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 12px 6px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-s);
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-out);
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #00f2ff 0%, #00b4d8 100%);
+            color: #030810;
+            box-shadow: 0 4px 18px var(--cyan-glow);
+        }
+        
+        /* ИНПУТЫ */
+        .inputs-group { display: flex; gap: 12px; margin-bottom: 16px; }
+        .input-box { flex: 1; }
+        .input-box.vol { flex: 1.45; }
+        
+        label { 
+            display: block; margin-bottom: 8px; font-size: 10px; font-weight: 800; 
+            color: var(--text-s); text-transform: uppercase; letter-spacing: 0.12em; padding-left: 4px;
+        }
+        
+        .field-wrap { 
+            position: relative; display: flex; align-items: center; 
+            border-radius: 18px; transition: all 0.25s var(--ease-out);
+        }
+        .field-wrap:focus-within { box-shadow: 0 0 25px var(--cyan-glow); }
+        
+        .field-prefix { 
+            position: absolute; left: 18px; font-size: 22px; font-weight: 900; 
+            color: var(--cyan); pointer-events: none; opacity: 0.9; font-family: 'JetBrains Mono', monospace;
+        }
+        
+        input { 
+            width: 100%; height: 62px; 
+            background: rgba(0, 0, 0, 0.55); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 18px; 
+            padding: 0 18px; 
+            color: #fff; font-size: 23px; font-weight: 800; 
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.25s var(--ease-out); 
+        }
+
+        input.density-input { padding-left: 48px; color: var(--cyan); }
+        input:focus { border-color: var(--cyan); background: rgba(0, 242, 255, 0.05); }
+        
+        .clear-btn {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.08); border: none; color: var(--text-s); font-size: 18px;
+            width: 32px; height: 32px; border-radius: 10px;
+            cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 2;
+        }
+        .clear-btn:hover { color: #fff; background: rgba(255,255,255,0.18); }
+
+        #results_container { display: flex; flex-direction: column; gap: 12px; }
+
+        .result-item { 
+            padding: 18px; border-radius: 20px; background: var(--bg-card-sub);
+            border: 1px solid var(--glass-border); 
+            display: none; 
+            animation: fadeInUp 0.4s var(--ease-out);
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .res-primary { 
+            border-left: 4px solid var(--cyan); 
+            background: linear-gradient(90deg, rgba(0, 242, 255, 0.06) 0%, rgba(22, 26, 45, 0.5) 100%); 
+        }
+        .res-secondary { 
+            border-left: 4px solid var(--gold); 
+            background: linear-gradient(90deg, rgba(255, 190, 26, 0.06) 0%, rgba(22, 26, 45, 0.5) 100%); 
+        }
+        .res-green { 
+            border-left: 4px solid var(--green); 
+            background: linear-gradient(90deg, rgba(12, 243, 169, 0.06) 0%, rgba(22, 26, 45, 0.5) 100%); 
+        }
+        
+        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .res-label { font-size: 10px; text-transform: uppercase; color: var(--text-s); font-weight: 800; letter-spacing: 0.12em; }
+        
+        .res-data, .sum-val { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.04em; 
+            font-variant-numeric: tabular-nums;
+        }
+        .res-data span { font-size: 16px; font-weight: 600; opacity: 0.65; margin-left: 4px; font-family: 'Inter'; }
+        
+        #status_initial {
+            padding: 34px 20px; border: 1px dashed rgba(0, 242, 255, 0.35);
+            text-align: center; background: rgba(0, 242, 255, 0.015); border-radius: 20px;
+        }
+        .status-ready {
+            font-size: 14px !important; color: var(--cyan); font-weight: 700;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .pulse-icon { font-size: 9px; animation: blink 1.4s infinite; filter: drop-shadow(0 0 6px var(--cyan)); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .tag { 
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 11px; background: rgba(0,0,0,0.45); border-radius: 10px; 
+            font-size: 11px; color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.06);
+        }
+        .chem-list { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.8; font-weight: 500;}
+        .chem-list b { color: #fff; font-weight: 800; font-family: 'JetBrains Mono'; }
+
+        /* Полоса пропорций */
+        .ratio-bar-wrap {
+            display: none; height: 8px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.6);
+            margin: 4px 0 8px; border: 1px solid var(--glass-border);
+        }
+        .ratio-bar-inner { display: flex; height: 100%; width: 100%; }
+        .ratio-part-1 { background: var(--cyan); transition: width 0.4s; }
+        .ratio-part-2 { background: var(--gold); transition: width 0.4s; }
+        
+        .footer-summary { 
+            margin-top: 18px; padding: 16px 14px; background: rgba(0,0,0,0.45); 
+            border-radius: 20px; border: 1px solid var(--glass-border);
+            display: none; justify-content: space-around;
+        }
+        .sum-item { text-align: center; }
+        .sum-label { font-size: 9px; text-transform: uppercase; color: var(--text-s); letter-spacing: 0.12em; margin-bottom: 4px; font-weight: 800; }
+        .sum-val { font-size: 16px; }
+
+        /* Кнопка запуска таймера */
+        .btn-open-timer-modal {
+            width: 100%; margin-top: 16px; padding: 16px;
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.2) 0%, rgba(140, 75, 255, 0.2) 100%);
+            border: 1px solid var(--cyan); border-radius: 18px;
+            color: #fff; font-size: 13px; font-weight: 900; text-transform: uppercase;
+            cursor: pointer; letter-spacing: 0.1em; display: none;
+            box-shadow: 0 6px 25px rgba(0, 242, 255, 0.25); transition: 0.25s;
+        }
+        .btn-open-timer-modal:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 242, 255, 0.4); }
+
+        .copyright { 
+            text-align: center; margin-top: 24px; font-family: 'Fira Sans', sans-serif;
+            font-weight: 900; font-size: 11px; letter-spacing: 0.18em; 
+            color: #ffffff; text-transform: uppercase; opacity: 0.65;
+        }
+        
+        .btn-info-float { 
+            position: fixed; bottom: 20px; right: 20px; width: 48px; height: 48px; 
+            background: linear-gradient(135deg, #00f2ff 0%, #00a8ff 100%);
+            border: none; border-radius: 50%; color: #000; font-size: 20px; font-weight: 900;
+            cursor: pointer; box-shadow: 0 6px 20px rgba(0, 242, 255, 0.4); z-index: 100;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .btn-info-float:hover { transform: scale(1.1) rotate(15deg); }
+
+        /* ================= ДИЗАЙН ОКНА ТАЙМЕРА (HUD ТЕЛЕМЕТРИЯ) ================= */
+        .timer-modal-content {
+            background: #080913;
+            border: 1px solid rgba(0, 242, 255, 0.35);
+            border-radius: 34px;
+            padding: 24px 18px 20px;
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            text-align: center;
+            box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95), 0 0 50px rgba(0, 242, 255, 0.15);
+            animation: fadeInUp 0.35s var(--ease-out);
+            transition: border-color 0.4s, box-shadow 0.4s;
+            overflow: hidden;
+        }
+        
+        .timer-modal-content.theme-water {
+            border-color: rgba(0, 242, 255, 0.6);
+            box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95), 0 0 50px var(--cyan-glow);
+        }
+        .timer-modal-content.theme-galit {
+            border-color: rgba(255, 190, 26, 0.6);
+            box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95), 0 0 50px var(--gold-glow);
+        }
+        .timer-modal-content.theme-nitrate {
+            border-color: rgba(217, 70, 239, 0.6);
+            box-shadow: 0 35px 90px rgba(0, 0, 0, 0.95), 0 0 50px var(--nitrate-glow);
+        }
+        
+        .timer-modal-content.is-danger {
+            border-color: var(--red) !important;
+            animation: dangerPulse 1s infinite alternate ease-in-out !important;
+        }
+        @keyframes dangerPulse {
+            0% { box-shadow: 0 0 30px rgba(255, 51, 75, 0.3); }
+            100% { box-shadow: 0 0 70px rgba(255, 51, 75, 0.8), inset 0 0 30px rgba(255, 51, 75, 0.2); }
+        }
+
+        /* Общая шкала партии сверху таймера */
+        .batch-tracker {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        .batch-tracker-header {
+            display: flex; justify-content: space-between; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; color: var(--text-s); letter-spacing: 0.08em; margin-bottom: 5px;
+        }
+        .batch-tracker-header b { color: var(--green); }
+        .batch-progress-bar {
+            height: 6px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;
+        }
+        .batch-progress-fill {
+            height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--green));
+            transition: width 0.3s linear;
+        }
+
+        .timer-top-bar {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px;
+        }
+        .timer-badge {
+            display: inline-block; padding: 6px 12px; border-radius: 12px;
+            font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid var(--glass-border);
+        }
+        .timer-ctrl-btns { display: flex; gap: 6px; align-items: center; }
+        
+        .btn-ctrl-timer {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 6px 11px; font-size: 11px; font-weight: 800;
+            color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px;
+        }
+        .btn-ctrl-timer.active {
+            border-color: var(--cyan); color: var(--cyan); background: rgba(0, 242, 255, 0.12);
+        }
+
+        /* SVG КРУГОВОЙ ПРИБОР С ЗАСЕЧКАМИ */
+        .timer-circle-wrap {
+            position: relative; width: 230px; height: 230px; margin: 4px auto 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .timer-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform: rotate(-90deg);
+        }
+        .timer-circle-ticks {
+            fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6;
+            stroke-dasharray: 2 12;
+        }
+        .timer-circle-bg {
+            fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 11;
+        }
+        .timer-circle-progress {
+            fill: none; stroke: var(--cyan); stroke-width: 11;
+            stroke-linecap: round; transition: stroke-dashoffset 0.4s linear, stroke 0.4s;
+        }
+
+        .timer-inner-content {
+            position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center;
+        }
+        .timer-comp-name {
+            font-size: 15px; font-weight: 900; color: #fff; text-transform: uppercase;
+            letter-spacing: 0.1em; max-width: 170px;
+        }
+        .timer-time-big {
+            font-family: 'JetBrains Mono', monospace; font-size: 50px; font-weight: 900;
+            color: #fff; letter-spacing: 1px; line-height: 1.05; margin: 4px 0 0;
+        }
+
+        .timer-next-info {
+            font-size: 11px; color: var(--text-s); font-weight: 600; min-height: 18px; margin: 10px 0 16px;
+        }
+        .timer-next-info b { color: var(--gold); }
+
+        .timer-finish-banner {
+            display: none; padding: 14px; margin-bottom: 14px; border-radius: 16px;
+            background: rgba(12, 243, 169, 0.15); border: 1px solid var(--green);
+            color: var(--green); font-weight: 900; font-size: 14px; text-transform: uppercase;
+            letter-spacing: 0.06em; animation: fadeInUp 0.3s;
+        }
+
+        .timer-actions {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 12px;
+        }
+        .btn-t-act {
+            flex: 1; padding: 15px; border-radius: 16px; border: none; font-weight: 900;
+            font-size: 13px; cursor: pointer; text-transform: uppercase; transition: 0.2s;
+        }
+        .btn-t-start { background: linear-gradient(135deg, #00f2ff 0%, #00b4d8 100%); color: #000; box-shadow: 0 4px 18px var(--cyan-glow); }
+        .btn-t-pause { background: linear-gradient(135deg, #ffbe1a 0%, #ff9f1a 100%); color: #000; }
+        .btn-t-reset { background: rgba(255,255,255,0.08); color: #fff; }
+        .btn-t-close {
+            width: 100%; padding: 12px; background: transparent; border: 1px solid var(--glass-border);
+            border-radius: 14px; color: var(--text-s); font-weight: 700; font-size: 11px;
+            text-transform: uppercase; cursor: pointer;
+        }
+        .btn-t-close:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+        /* ОВЕРЛЕЙ БЛОКИРОВКИ ОТ СЛУЧАЙНЫХ НАЖАТИЙ ("РЕЖИМ КАРМАНА") */
+        .timer-lock-overlay {
+            position: absolute; inset: 0; background: rgba(8, 9, 19, 0.94);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 34px; padding: 25px;
+        }
+        .timer-lock-overlay.active { display: flex; }
+        .lock-icon-big { font-size: 42px; margin-bottom: 12px; filter: drop-shadow(0 0 15px var(--cyan-glow)); }
+        .lock-text { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .lock-sub { font-size: 11px; color: var(--text-s); margin-bottom: 24px; text-align: center; }
+        .btn-unlock {
+            padding: 14px 28px; background: rgba(0, 242, 255, 0.15); border: 1px solid var(--cyan);
+            border-radius: 16px; color: var(--cyan); font-weight: 900; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
+        }
+
+        /* МОДАЛКА НАСТРОЕК */
+        .modal-overlay { 
+            position: fixed; inset: 0; 
+            background: rgba(0, 0, 0, 0.88); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999; padding: 18px; 
+        }
+        .modal-content { 
+            background: #0a0b16; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 28px; 
+            padding: 24px 20px; 
+            width: 100%; max-width: 430px; 
+            position: relative; max-height: 88vh; 
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        
+        .time-setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--glass-border); }
+        .time-setting-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .time-input { width: 75px; height: 38px; text-align: center; font-size: 15px; border-radius: 10px; padding: 0; font-family: 'JetBrains Mono', monospace; }
+
+        .settings-sec-title {
+            font-size: 11px; font-weight: 900; color: var(--cyan); text-transform: uppercase;
+            letter-spacing: 0.1em; margin: 16px 0 6px 0; padding-bottom: 4px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .settings-hint {
+            font-size: 10px; color: var(--text-s); margin-bottom: 8px; line-height: 1.4;
+        }
+        .chem-setting-row {
+            display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+        }
+        .chem-name-input {
+            flex: 1.3; height: 38px; font-size: 12px; font-weight: 700; padding: 0 10px;
+            border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            color: #fff;
+        }
+        .chem-rate-input {
+            flex: 1.1; height: 38px; font-size: 13px; font-weight: 700; padding: 0 8px; text-align: center;
+            border-radius: 10px; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--glass-border);
+            color: var(--cyan); font-family: 'JetBrains Mono', monospace;
+        }
+
+        .save-btn { width: 100%; padding: 14px; background: var(--cyan); color: #000; border: none; border-radius: 14px; font-weight: 900; margin-top: 18px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+        .btn-close-modal {
+            position: absolute; top: 16px; right: 16px; background: none; border: none;
+            color: var(--text-s); font-size: 24px; cursor: pointer; z-index: 10;
+        }
+        .btn-close-modal:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div id="calc_view">
+        <header>
+            <h1>КАЛЬКУЛЯТОР МАКСИМ • ЦЕХ № 4</h1>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="openSettings()" title="Настройки">⚙️</button>
+            </div>
+        </header>
+        
+        <div class="main-card">
+            <!-- Переключатель режима: Выдача раствора / Корректировка Плотности -->
+            <div class="mode-switcher">
+                <button class="mode-btn active" id="tab_make" onclick="setAppMode('make')">Выдача раствора</button>
+                <button class="mode-btn" id="tab_corr" onclick="setAppMode('corr')">Корректировка Плотности</button>
+            </div>
+
+            <!-- БЛОК ВВОДА 1: ВЫДАЧА РАСТВОРА -->
+            <div id="inputs_make">
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label>Плотность</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">1.</span>
+                            <input type="number" id="density_tail" class="density-input" placeholder="00" inputmode="decimal" maxlength="2">
+                        </div>
+                    </div>
+                    
+                    <div class="input-box vol">
+                        <label>Объём (м3)</label>
+                        <div class="field-wrap">
+                            <input type="text" id="volume_input" placeholder="0.00" inputmode="decimal">
+                            <button class="clear-btn" id="reset_btn_make">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- БЛОК ВВОДА 2: КОРРЕКТИРОВКА ПЛОТНОСТИ С ДВУМЯ ОБЪЕМАМИ -->
+            <div id="inputs_corr" style="display: none;">
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label>Объём сейчас (м3)</label>
+                        <div class="field-wrap">
+                            <input type="text" id="corr_vol_curr" placeholder="6.00" inputmode="decimal">
+                            <button class="clear-btn" id="reset_btn_corr">×</button>
+                        </div>
+                    </div>
+                    <div class="input-box">
+                        <label>Надо всего (м3)</label>
+                        <div class="field-wrap">
+                            <input type="text" id="corr_vol_target" placeholder="10.00" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label>Было (плотность)</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">1.</span>
+                            <input type="number" id="corr_d_curr" class="density-input" placeholder="00" inputmode="decimal" maxlength="2">
+                        </div>
+                    </div>
+                    <div class="input-box">
+                        <label>Надо (цель)</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">1.</span>
+                            <input type="number" id="corr_d_target" class="density-input" placeholder="00" inputmode="decimal" maxlength="2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results_container">
+                <div id="status_initial" class="result-item" style="display: block;">
+                    <div class="res-label">Система активна</div>
+                    <div class="status-ready">
+                        <span class="pulse-icon">●</span> Максим готов к расчёту
+                    </div>
+                </div>
+
+                <!-- Полоса пропорций -->
+                <div id="ratio_bar_wrap" class="ratio-bar-wrap">
+                    <div class="ratio-bar-inner">
+                        <div id="ratio_part_1" class="ratio-part-1"></div>
+                        <div id="ratio_part_2" class="ratio-part-2"></div>
+                    </div>
+                </div>
+
+                <div id="res_main" class="result-item res-primary"></div>
+                <div id="res_alt" class="result-item res-secondary"></div>
+                <div id="res_corr_total" class="result-item res-green"></div>
+                <div id="res_chem" class="result-item res-chem"></div>
+            </div>
+
+            <div id="footer_area" class="footer-summary">
+                <div class="sum-item">
+                    <div class="sum-label" id="footer_label_time">Общее время</div>
+                    <div id="total_time" class="sum-val">--</div>
+                </div>
+                <div class="sum-item">
+                    <div class="sum-label" id="footer_label_weight">Общий вес</div>
+                    <div id="total_weight" class="sum-val" style="color: var(--green)">--</div>
+                </div>
+            </div>
+
+            <!-- Кнопка вызова окна таймера -->
+            <button id="btn_open_timer_modal" class="btn-open-timer-modal" onclick="openTimerModal()">⏱ Открыть таймер выдачи</button>
+            
+            <div class="copyright">ЦЕХ № 4 • Горшковский РУС</div>
+        </div>
+    </div>
+</div>
+
+<!-- Кнопка Инфо -->
+<button class="btn-info-float" onclick="toggleModal()">i</button>
+
+<!-- МОДАЛЬНОЕ ОКНО ТАЙМЕРА (HUD ТЕЛЕМЕТРИЯ) -->
+<div id="timerModal" class="modal-overlay" onclick="closeTimerModal(event)">
+    <div id="timer_modal_box" class="timer-modal-content" onclick="event.stopPropagation()">
+        
+        <!-- Защитный экран от случайных нажатий (Режим кармана) -->
+        <div id="timer_lock_overlay" class="timer-lock-overlay">
+            <div class="lock-icon-big">🔒</div>
+            <div class="lock-text">Экран заблокирован</div>
+            <div class="lock-sub">Защита от случайных нажатий в кармане</div>
+            <button class="btn-unlock" onclick="unlockTimerTouch()">Разблокировать экран</button>
+        </div>
+
+        <button class="btn-close-modal" onclick="closeTimerModalDirect()">×</button>
+        
+        <!-- Верхняя телеметрия всей партии -->
+        <div class="batch-tracker">
+            <div class="batch-tracker-header">
+                <span>Прогресс всей выдачи</span>
+                <span id="batch_tracker_text">0.0 / 0.0 м³</span>
+            </div>
+            <div class="batch-progress-bar">
+                <div id="batch_progress_fill" class="batch-progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="timer-top-bar">
+            <div id="modal_timer_badge" class="timer-badge">ЭТАП 1 ИЗ 2</div>
+            <div class="timer-ctrl-btns">
+                <button class="btn-ctrl-timer" onclick="lockTimerTouch()" title="Блокировка от нажатий">🔒</button>
+                <button id="btn_voice" class="btn-ctrl-timer active" onclick="toggleVoice()">🔊</button>
+                <button class="btn-ctrl-timer" onclick="testVoice()">Тест</button>
+            </div>
+        </div>
+
+        <!-- Круговой циферблат с делениями -->
+        <div class="timer-circle-wrap">
+            <svg class="timer-svg" viewBox="0 0 200 200">
+                <circle class="timer-circle-ticks" cx="100" cy="100" r="94"></circle>
+                <circle class="timer-circle-bg" cx="100" cy="100" r="84"></circle>
+                <circle id="timer_circle_progress" class="timer-circle-progress" cx="100" cy="100" r="84" stroke-dasharray="527.78" stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="timer-inner-content">
+                <div id="modal_timer_comp_name" class="timer-comp-name">ГАЛИТ 1.18</div>
+                <div id="modal_timer_display" class="timer-time-big">00:00</div>
+            </div>
+        </div>
+
+        <div id="modal_timer_next_info" class="timer-next-info">Далее: --</div>
+
+        <div id="timer_finish_banner" class="timer-finish-banner">✓ Выдача завершена</div>
+
+        <div class="timer-actions">
+            <button id="modal_btn_start" class="btn-t-act btn-t-start" onclick="startTimer()">Старт</button>
+            <button id="modal_btn_pause" class="btn-t-act btn-t-pause" onclick="pauseTimer()" style="display:none;">Пауза</button>
+            <button class="btn-t-act btn-t-reset" onclick="resetTimer()">Сброс</button>
+        </div>
+
+        <button class="btn-t-close" onclick="closeTimerModalDirect()">Свернуть окно таймера</button>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК -->
+<div id="settingsModal" class="modal-overlay" onclick="closeSettings(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="document.getElementById('settingsModal').style.display='none'">×</button>
+        <div style="font-size: 16px; font-weight: 900; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--cyan)">⚙</span> Настройки (Время и Добавки)
+        </div>
+        
+        <div class="settings-sec-title">⏱ Время закачки 1 куба (сек)</div>
+        <div class="time-setting-row">
+            <label style="margin:0; font-size: 12px;">Вода 1.01</label>
+            <input type="number" id="setting_t_water" class="time-input">
+        </div>
+        <div class="time-setting-row">
+            <label style="margin:0; font-size: 12px;">Галит 1.18</label>
+            <input type="number" id="setting_t_galit" class="time-input">
+        </div>
+        <div class="time-setting-row">
+            <label style="margin:0; font-size: 12px;">Нитрат 1.48</label>
+            <input type="number" id="setting_t_nitrate" class="time-input">
+        </div>
+
+        <div class="settings-sec-title">🧪 Добавки до 1.18 (на 1 л раствора)</div>
+        <div class="settings-hint">Укажите название и норму в литрах на 1 литр раствора:</div>
+        
+        <div class="chem-setting-row">
+            <input type="text" id="chem_low_name_0" class="chem-name-input" placeholder="Добавка 1">
+            <input type="number" step="any" id="chem_low_rate_0" class="chem-rate-input" placeholder="л на 1 л">
+        </div>
+        <div class="chem-setting-row">
+            <input type="text" id="chem_low_name_1" class="chem-name-input" placeholder="Добавка 2">
+            <input type="number" step="any" id="chem_low_rate_1" class="chem-rate-input" placeholder="л на 1 л">
+        </div>
+        <div class="chem-setting-row">
+            <input type="text" id="chem_low_name_2" class="chem-name-input" placeholder="Добавка 3">
+            <input type="number" step="any" id="chem_low_rate_2" class="chem-rate-input" placeholder="л на 1 л">
+        </div>
+
+        <div class="settings-sec-title">🧪 Добавки от 1.19 (на 1 л раствора / нитрата)</div>
+        <div class="settings-hint">Добавки 1 и 2 — на весь объём. Добавка 3 — только на литры Нитрата 1.48:</div>
+
+        <div class="chem-setting-row">
+            <input type="text" id="chem_high_name_0" class="chem-name-input" placeholder="Добавка 1 (на объем)">
+            <input type="number" step="any" id="chem_high_rate_0" class="chem-rate-input" placeholder="л на 1 л">
+        </div>
+        <div class="chem-setting-row">
+            <input type="text" id="chem_high_name_1" class="chem-name-input" placeholder="Добавка 2 (на объем)">
+            <input type="number" step="any" id="chem_high_rate_1" class="chem-rate-input" placeholder="л на 1 л">
+        </div>
+        <div class="chem-setting-row">
+            <input type="text" id="chem_high_name_2" class="chem-name-input" placeholder="Добавка 3 (на нитрат)">
+            <input type="number" step="any" id="chem_high_rate_2" class="chem-rate-input" placeholder="л на 1 л нитрата">
+        </div>
+
+        <button class="save-btn" onclick="saveSettings()">СОХРАНИТЬ НАСТРОЙКИ</button>
+    </div>
+</div>
+
+<!-- Модальное окно О приложении -->
+<div id="infoModal" class="modal-overlay" onclick="toggleModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="document.getElementById('infoModal').style.display='none'">×</button>
+        <div style="font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--cyan)">●</span> О приложении
+        </div>
+        <div style="font-size: 13px; line-height: 1.8; color: var(--text-s);">
+            • <b style="color:#fff">Калькулятор Максим:</b> Автоматический расчёт плотностей, объёмов, добавок реагентов, времени закачки и корректировки растворов.<br>
+            • <b style="color:#fff">Приложение:</b> Для быстрого и точного подсчёта выдачи нужного объёма раствора.<br>
+        </div>
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 12px; font-weight: 800;">
+            <span style="color: var(--text-s); text-transform: uppercase; letter-spacing: 1px;">Разработчик:</span> 
+            <span style="color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow);">Федосеенко М. Ю.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAppMode = 'make';
+
+    const D_INPUT = document.getElementById('density_tail');
+    const V_INPUT = document.getElementById('volume_input');
+    const RESET_MAKE = document.getElementById('reset_btn_make');
+
+    const CORR_V_CURR = document.getElementById('corr_vol_curr');
+    const CORR_V_TARG = document.getElementById('corr_vol_target');
+    const CORR_D_CURR = document.getElementById('corr_d_curr');
+    const CORR_D_TARG = document.getElementById('corr_d_target');
+    const RESET_CORR = document.getElementById('reset_btn_corr');
+
+    const INIT_STATUS = document.getElementById('status_initial');
+    const FOOTER = document.getElementById('footer_area');
+    const BTN_OPEN_TIMER_MODAL = document.getElementById('btn_open_timer_modal');
+
+    // Настройки времени и добавок
+    let CONST = {
+        time: {
+            water: parseFloat(localStorage.getItem('t_water')) || 45,
+            galit: parseFloat(localStorage.getItem('t_galit')) || 45,
+            nitrate: parseFloat(localStorage.getItem('t_nitrate')) || 40
+        },
+        chem: {
+            low: JSON.parse(localStorage.getItem('chem_low_cfg') || 'null') || [
+                { name: "SCIMOL", rate: 0.0002067, basis: 'total' },
+                { name: "АЗОЛ", rate: 0.00001, basis: 'total' },
+                { name: "ГФ-1", rate: 0.0000127, basis: 'total' }
+            ],
+            high: JSON.parse(localStorage.getItem('chem_high_cfg') || 'null') || [
+                { name: "SCIMOL", rate: 0.00523, basis: 'total' },
+                { name: "ГФ-1", rate: 0.0000294, basis: 'total' },
+                { name: "Кислота", rate: 0.00027, basis: 'nitrate' }
+            ]
+        }
+    };
+
+    // Переменные таймера
+    let timerSteps = []; 
+    let currentStepIndex = 0;
+    let timerInterval = null;
+    let wakeLock = null;
+    let voiceEnabled = localStorage.getItem('voice_enabled') !== 'false';
+    const CIRCLE_CIRCUMFERENCE = 527.78; // 2 * PI * 84
+
+    // Аудио-контекст для микро-сигналов 3-2-1
+    let audioCtx = null;
+
+    /* 4 АУДИОФАЙЛА */
+    const SOUNDS = {
+        water: new Audio('water.mp3'),
+        galit: new Audio('galit.mp3'),
+        nitrate: new Audio('nitrate.mp3'),
+        finish: new Audio('finish.mp3')
+    };
+    Object.values(SOUNDS).forEach(audio => { audio.preload = 'auto'; });
+
+    function unlockAudioEngine() {
+        if (!audioCtx) {
+            const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtxClass) audioCtx = new AudioCtxClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        Object.values(SOUNDS).forEach(audio => {
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(() => {});
+        });
+    }
+
+    function playBeepTone(freq = 880, duration = 80) {
+        if (!audioCtx) return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (duration / 1000));
+            osc.start();
+            osc.stop(audioCtx.currentTime + (duration / 1000));
+        } catch(e) {}
+    }
+
+    function playCustomAudio(key) {
+        if (!voiceEnabled) return;
+        const audio = SOUNDS[key];
+        if (!audio) return;
+        try {
+            Object.values(SOUNDS).forEach(a => { a.pause(); a.currentTime = 0; });
+            audio.currentTime = 0;
+            audio.play().catch(err => console.warn('Не удалось воспроизвести файл ' + key + '.mp3', err));
+        } catch(e) {}
+    }
+
+    function getSoundKeyByCompName(rawName) {
+        const clean = (rawName || '').toLowerCase();
+        if (clean.includes('вод')) return 'water';
+        if (clean.includes('галит')) return 'galit';
+        if (clean.includes('нитрат')) return 'nitrate';
+        return null;
+    }
+
+    window.onload = () => {
+        D_INPUT.focus();
+        loadSettingsInputs();
+        updateVoiceButton();
+    };
+
+    function loadSettingsInputs() {
+        document.getElementById('setting_t_water').value = CONST.time.water;
+        document.getElementById('setting_t_galit').value = CONST.time.galit;
+        document.getElementById('setting_t_nitrate').value = CONST.time.nitrate;
+
+        for (let i = 0; i < 3; i++) {
+            const lowItem = CONST.chem.low[i] || { name: '', rate: 0 };
+            document.getElementById(`chem_low_name_${i}`).value = lowItem.name;
+            document.getElementById(`chem_low_rate_${i}`).value = lowItem.rate > 0 ? lowItem.rate : '';
+
+            const highItem = CONST.chem.high[i] || { name: '', rate: 0 };
+            document.getElementById(`chem_high_name_${i}`).value = highItem.name;
+            document.getElementById(`chem_high_rate_${i}`).value = highItem.rate > 0 ? highItem.rate : '';
+        }
+    }
+
+    function setAppMode(mode) {
+        currentAppMode = mode;
+        document.getElementById('tab_make').classList.toggle('active', mode === 'make');
+        document.getElementById('tab_corr').classList.toggle('active', mode === 'corr');
+        
+        document.getElementById('inputs_make').style.display = (mode === 'make') ? 'block' : 'none';
+        document.getElementById('inputs_corr').style.display = (mode === 'corr') ? 'block' : 'none';
+
+        if (mode === 'make') {
+            D_INPUT.focus();
+            calculate();
+        } else {
+            CORR_V_CURR.focus();
+            calculateCorr();
+        }
+    }
+
+    D_INPUT.addEventListener('input', function() {
+        if (this.value.length > 2) this.value = this.value.slice(0, 2);
+        if (this.value.length === 2) V_INPUT.focus();
+        calculate();
+    });
+    V_INPUT.addEventListener('input', function() {
+        this.value = this.value.replace(',', '.');
+        calculate();
+    });
+    RESET_MAKE.addEventListener('click', () => {
+        D_INPUT.value = ''; V_INPUT.value = '';
+        calculate(); D_INPUT.focus();
+    });
+
+    CORR_V_CURR.addEventListener('input', function() {
+        this.value = this.value.replace(',', '.');
+        calculateCorr();
+    });
+    CORR_V_TARG.addEventListener('input', function() {
+        this.value = this.value.replace(',', '.');
+        calculateCorr();
+    });
+    CORR_D_CURR.addEventListener('input', function() {
+        if (this.value.length > 2) this.value = this.value.slice(0, 2);
+        if (this.value.length === 2) CORR_D_TARG.focus();
+        calculateCorr();
+    });
+    CORR_D_TARG.addEventListener('input', function() {
+        if (this.value.length > 2) this.value = this.value.slice(0, 2);
+        calculateCorr();
+    });
+    RESET_CORR.addEventListener('click', () => {
+        CORR_V_CURR.value = ''; CORR_V_TARG.value = '';
+        CORR_D_CURR.value = ''; CORR_D_TARG.value = '';
+        calculateCorr(); CORR_V_CURR.focus();
+    });
+
+    const fmt = {
+        vol: (v) => {
+            if (!v || v < 0.001) return "0<span>л</span>";
+            let l = Math.round(v * 1000);
+            let m3 = Math.floor(l / 1000);
+            l = l % 1000;
+            return m3 === 0 ? `${l}<span>л</span>` : `${m3}<span>м3</span> ${l}<span>л</span>`;
+        },
+        w: (kg) => kg >= 1000 ? `${(kg / 1000).toFixed(3)} <span>т</span>` : `${Math.round(kg)} <span>кг</span>`,
+        time: (sec) => {
+            sec = Math.round(sec);
+            let m = Math.floor(sec / 60);
+            let s = sec % 60;
+            return `${m}м ${s.toString().padStart(2, '0')}с`;
+        },
+        chemVal: (l) => {
+            if (l >= 10) return l.toFixed(1);
+            if (l >= 1) return l.toFixed(2);
+            return l.toFixed(3);
+        }
+    };
+
+    /* ================= 1. ВЫДАЧА РАСТВОРА ================= */
+    function calculate() {
+        if (currentAppMode !== 'make') return;
+
+        const dRaw = D_INPUT.value;
+        const vRaw = V_INPUT.value;
+        const vol = parseFloat(vRaw);
+        
+        RESET_MAKE.style.display = (dRaw || vRaw) ? 'flex' : 'none';
+
+        if (!dRaw || dRaw.length < 2 || !vRaw || isNaN(vol) || vol <= 0) {
+            toggleResults(false);
+            BTN_OPEN_TIMER_MODAL.style.display = 'none';
+            document.getElementById('ratio_bar_wrap').style.display = 'none';
+            pauseTimer();
+            timerSteps = [];
+            return;
+        }
+
+        toggleResults(true);
+        document.getElementById('res_corr_total').style.display = 'none';
+
+        const d = parseFloat("1." + dRaw);
+        const DOM = {
+            main: document.getElementById('res_main'),
+            alt: document.getElementById('res_alt'),
+            chem: document.getElementById('res_chem')
+        };
+
+        let data = { m: {}, a: {}, chem: '', w: 0 };
+        let chemCalculatedList = [];
+        const totalSolutionLiters = vol * 1000;
+
+        if (d <= 1.18) {
+            data.m.val = (d >= 1.18) ? vol : vol * (d - 1.0) / 0.18;
+            data.a.val = Math.max(0, vol - data.m.val);
+            data.m.lab = "Галит 1.18"; data.a.lab = "Вода";
+            data.m.t = data.m.val * CONST.time.galit; 
+            data.a.t = data.a.val * CONST.time.water;
+            data.m.w = data.m.val * 1180; data.a.w = data.a.val * 1000;
+            
+            CONST.chem.low.forEach(item => {
+                if (item.name && item.rate > 0) {
+                    chemCalculatedList.push({ name: item.name, amount: totalSolutionLiters * item.rate });
+                }
+            });
+        } else {
+            data.m.val = Math.max(0, ((1.48 - d) / 0.3) * vol);
+            data.a.val = Math.max(0, vol - data.m.val);
+            data.m.lab = "Галит 1.18"; data.a.lab = "Нитрат 1.48";
+            data.m.t = data.m.val * CONST.time.galit; 
+            data.a.t = data.a.val * CONST.time.nitrate;
+            data.m.w = data.m.val * 1180; data.a.w = data.a.val * 1480;
+
+            const nitrateLiters = data.a.val * 1000;
+            CONST.chem.high.forEach(item => {
+                if (item.name && item.rate > 0) {
+                    const baseLiters = (item.basis === 'nitrate') ? nitrateLiters : totalSolutionLiters;
+                    chemCalculatedList.push({ name: item.name, amount: baseLiters * item.rate });
+                }
+            });
+        }
+
+        renderResCard(DOM.main, data.m);
+        renderResCard(DOM.alt, data.a);
+
+        const ratioBarWrap = document.getElementById('ratio_bar_wrap');
+        const ratio1 = document.getElementById('ratio_part_1');
+        const ratio2 = document.getElementById('ratio_part_2');
+        if (data.m.val > 0 && data.a.val > 0) {
+            ratioBarWrap.style.display = 'block';
+            const pct1 = (data.m.val / vol) * 100;
+            ratio1.style.width = pct1 + '%';
+            ratio2.style.width = (100 - pct1) + '%';
+        } else {
+            ratioBarWrap.style.display = 'none';
+        }
+
+        let chemHtml = '';
+        chemCalculatedList.forEach(c => {
+            chemHtml += `• ${c.name}: <b>${fmt.chemVal(c.amount)} л</b><br>`;
+        });
+        DOM.chem.innerHTML = `<div class="res-label">Добавки</div><div class="chem-list">${chemHtml || '• Без добавок'}</div>`;
+        
+        const totalSec = Math.round(data.m.t + data.a.t);
+        document.getElementById('footer_label_time').innerText = "Общее время";
+        document.getElementById('footer_label_weight').innerText = "Общий вес";
+        document.getElementById('total_time').innerText = fmt.time(totalSec);
+        document.getElementById('total_weight').innerHTML = fmt.w(data.m.w + data.a.w);
+
+        setupTimerSteps(data);
+        BTN_OPEN_TIMER_MODAL.style.display = 'block';
+    }
+
+    /* ================= 2. КОРРЕКТИРОВКА ПЛОТНОСТИ ================= */
+    function calculateCorr() {
+        if (currentAppMode !== 'corr') return;
+
+        const vCurrRaw = CORR_V_CURR.value;
+        const vTargRaw = CORR_V_TARG.value;
+        const dCurrRaw = CORR_D_CURR.value;
+        const dTargetRaw = CORR_D_TARG.value;
+
+        RESET_CORR.style.display = (vCurrRaw || vTargRaw || dCurrRaw || dTargetRaw) ? 'flex' : 'none';
+
+        const v0 = parseFloat(vCurrRaw);
+        const vt = parseFloat(vTargRaw);
+
+        if (!vCurrRaw || isNaN(v0) || v0 <= 0 || 
+            !vTargRaw || isNaN(vt) || vt <= 0 || 
+            !dCurrRaw || dCurrRaw.length < 2 || 
+            !dTargetRaw || dTargetRaw.length < 2) {
+            toggleResults(false);
+            BTN_OPEN_TIMER_MODAL.style.display = 'none';
+            document.getElementById('ratio_bar_wrap').style.display = 'none';
+            pauseTimer();
+            timerSteps = [];
+            return;
+        }
+
+        const d0 = parseFloat("1." + dCurrRaw);
+        const dt = parseFloat("1." + dTargetRaw);
+        const deltaV = vt - v0;
+
+        const DOM = {
+            main: document.getElementById('res_main'),
+            alt: document.getElementById('res_alt'),
+            tot: document.getElementById('res_corr_total'),
+            chem: document.getElementById('res_chem')
+        };
+
+        if (deltaV <= 0.001) {
+            toggleResults(false);
+            INIT_STATUS.style.display = 'block';
+            INIT_STATUS.innerHTML = `<div class="res-label" style="color:var(--red)">ОШИБКА ОБЪЁМА</div><div class="status-ready" style="color:var(--red)">Надо всего (${vt} м3) должно быть больше текущего (${v0} м3)</div>`;
+            return;
+        }
+
+        const targetMassTotal = vt * dt;
+        const currentMassTotal = v0 * d0;
+        const massToAdd = targetMassTotal - currentMassTotal;
+        const reqDensityAdd = massToAdd / deltaV;
+
+        if (reqDensityAdd > 1.4805) {
+            const maxPossibleDensity = (currentMassTotal + (deltaV * 1.48)) / vt;
+            toggleResults(false);
+            INIT_STATUS.style.display = 'block';
+            INIT_STATUS.innerHTML = `<div class="res-label" style="color:var(--red)">НЕВОЗМОЖНО УТЯЖЕЛИТЬ</div>
+                                     <div style="font-size:13px; color:#fff; line-height:1.6; margin-top:8px;">
+                                        Даже при доливке чистого Нитрата 1.48 (${deltaV.toFixed(2)} м3), максимум выйдет: <b style="color:var(--cyan)">1.${maxPossibleDensity.toFixed(2).split('.')[1]}</b>
+                                     </div>`;
+            return;
+        }
+
+        if (reqDensityAdd < 0.9995) {
+            const minPossibleDensity = (currentMassTotal + (deltaV * 1.00)) / vt;
+            toggleResults(false);
+            INIT_STATUS.style.display = 'block';
+            INIT_STATUS.innerHTML = `<div class="res-label" style="color:var(--red)">НЕВОЗМОЖНО РАЗБАВИТЬ</div>
+                                     <div style="font-size:13px; color:#fff; line-height:1.6; margin-top:8px;">
+                                        Даже при доливке чистой Воды 1.00 (${deltaV.toFixed(2)} м3), минимум выйдет: <b style="color:var(--gold)">1.${minPossibleDensity.toFixed(2).split('.')[1]}</b>
+                                     </div>`;
+            return;
+        }
+
+        toggleResults(true);
+
+        let comp1 = { lab: '', val: 0, t: 0, w: 0 };
+        let comp2 = { lab: '', val: 0, t: 0, w: 0 };
+        let chemCalculatedList = [];
+        const deltaVLiters = deltaV * 1000;
+
+        if (reqDensityAdd <= 1.1801) {
+            comp1.val = (reqDensityAdd >= 1.18) ? deltaV : deltaV * (reqDensityAdd - 1.00) / 0.18;
+            comp2.val = Math.max(0, deltaV - comp1.val);
+            comp1.lab = "Галит 1.18 (долить)";
+            comp2.lab = "Вода (долить)";
+
+            comp1.t = comp1.val * CONST.time.galit;
+            comp2.t = comp2.val * CONST.time.water;
+            comp1.w = comp1.val * 1180;
+            comp2.w = comp2.val * 1000;
+
+            CONST.chem.low.forEach(item => {
+                if (item.name && item.rate > 0) {
+                    chemCalculatedList.push({ name: item.name, amount: deltaVLiters * item.rate });
+                }
+            });
+        } else {
+            comp1.val = Math.max(0, ((1.48 - reqDensityAdd) / 0.30) * deltaV);
+            comp2.val = Math.max(0, deltaV - comp1.val);
+            comp1.lab = "Галит 1.18 (долить)";
+            comp2.lab = "Нитрат 1.48 (долить)";
+
+            comp1.t = comp1.val * CONST.time.galit;
+            comp2.t = comp2.val * CONST.time.nitrate;
+            comp1.w = comp1.val * 1180;
+            comp2.w = comp2.val * 1480;
+
+            const addedNitrateLiters = comp2.val * 1000;
+            CONST.chem.high.forEach(item => {
+                if (item.name && item.rate > 0) {
+                    const baseLiters = (item.basis === 'nitrate') ? addedNitrateLiters : deltaVLiters;
+                    chemCalculatedList.push({ name: item.name, amount: baseLiters * item.rate });
+                }
+            });
+        }
+
+        renderResCard(DOM.main, comp1);
+        renderResCard(DOM.alt, comp2);
+
+        const ratioBarWrap = document.getElementById('ratio_bar_wrap');
+        const ratio1 = document.getElementById('ratio_part_1');
+        const ratio2 = document.getElementById('ratio_part_2');
+        if (comp1.val > 0 && comp2.val > 0) {
+            ratioBarWrap.style.display = 'block';
+            const pct1 = (comp1.val / deltaV) * 100;
+            ratio1.style.width = pct1 + '%';
+            ratio2.style.width = (100 - pct1) + '%';
+        } else {
+            ratioBarWrap.style.display = 'none';
+        }
+
+        DOM.tot.style.display = 'block';
+        DOM.tot.innerHTML = `<div class="res-header">
+                                <div class="res-label" style="color:var(--green)">ИТОГО В ЦИСТЕРНЕ (${vt.toFixed(2)} м3)</div>
+                                <div class="tag" style="background:rgba(12,243,169,0.1); color:var(--green)">Цель: 1.${dTargetRaw}</div>
+                             </div>
+                             <div class="res-data" style="color:var(--green); font-size:24px;">
+                                Долить: ${fmt.vol(deltaV)} <span style="font-size:14px; opacity:0.8;">(было ${v0.toFixed(2)} м3)</span>
+                             </div>`;
+
+        let chemHtml = '';
+        chemCalculatedList.forEach(c => {
+            chemHtml += `• ${c.name} на доливку: <b>${fmt.chemVal(c.amount)} л</b><br>`;
+        });
+        DOM.chem.style.display = 'block';
+        DOM.chem.innerHTML = `<div class="res-label">Реагенты на доливку (${deltaV.toFixed(2)} м3)</div><div class="chem-list">${chemHtml || '• Без дополнительных добавок'}</div>`;
+
+        const totalAddSec = Math.round(comp1.t + comp2.t);
+        const totalAddWeight = comp1.w + comp2.w;
+
+        document.getElementById('footer_label_time').innerText = "Время доливки";
+        document.getElementById('footer_label_weight').innerText = "Вес доливки";
+        document.getElementById('total_time').innerText = fmt.time(totalAddSec);
+        document.getElementById('total_weight').innerHTML = fmt.w(totalAddWeight);
+
+        pauseTimer();
+        timerSteps = [];
+        if (comp2.lab.includes("Вода") && comp2.val > 0.001) {
+            timerSteps.push({ name: comp2.lab.replace(' (долить)', ''), sec: Math.round(comp2.t), initialSec: Math.round(comp2.t), vol: comp2.val });
+        }
+        if (comp1.val > 0.001) {
+            timerSteps.push({ name: comp1.lab.replace(' (долить)', ''), sec: Math.round(comp1.t), initialSec: Math.round(comp1.t), vol: comp1.val });
+        }
+        if (comp2.lab.includes("Нитрат") && comp2.val > 0.001) {
+            timerSteps.push({ name: comp2.lab.replace(' (долить)', ''), sec: Math.round(comp2.t), initialSec: Math.round(comp2.t), vol: comp2.val });
+        }
+        currentStepIndex = 0;
+        BTN_OPEN_TIMER_MODAL.style.display = 'block';
+    }
+
+    function renderResCard(el, d) {
+        if (d.val < 0.001) { el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = `<div class="res-header"><div class="res-label">${d.lab}</div>
+                        <div class="tag-container" style="display:flex; gap:5px;">
+                            <div class="tag">⏱ ${fmt.time(d.t)}</div>
+                            <div class="tag" style="background:rgba(255,255,255,0.06)">⚖ ${fmt.w(d.w)}</div>
+                        </div></div>
+                        <div class="res-data">${fmt.vol(d.val)}</div>`;
+    }
+    
+    function toggleResults(show) {
+        INIT_STATUS.style.display = show ? 'none' : 'block';
+        FOOTER.style.display = show ? 'flex' : 'none';
+        const cards = document.querySelectorAll('#results_container .result-item:not(#status_initial)');
+        cards.forEach(c => c.style.display = show ? 'block' : 'none');
+    }
+
+    /* ---------------- УПРАВЛЕНИЕ ЗВУКОМ ---------------- */
+    function toggleVoice() {
+        unlockAudioEngine();
+        voiceEnabled = !voiceEnabled;
+        localStorage.setItem('voice_enabled', voiceEnabled);
+        updateVoiceButton();
+        if (voiceEnabled) testVoice();
+    }
+
+    function updateVoiceButton() {
+        const btn = document.getElementById('btn_voice');
+        if (voiceEnabled) {
+            btn.classList.add('active');
+            btn.innerText = '🔊';
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = '🔇';
+        }
+    }
+
+    function testVoice() {
+        unlockAudioEngine();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        if (timerSteps.length > 0) {
+            const key = getSoundKeyByCompName(timerSteps[currentStepIndex].name);
+            playCustomAudio(key || 'finish');
+        } else {
+            playCustomAudio('finish');
+        }
+    }
+
+    /* ---------------- ТАЙМЕР ВЫДАЧИ ---------------- */
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch(err) {}
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock) { wakeLock.release().then(() => { wakeLock = null; }); }
+    }
+
+    function lockTimerTouch() {
+        document.getElementById('timer_lock_overlay').classList.add('active');
+    }
+    function unlockTimerTouch() {
+        document.getElementById('timer_lock_overlay').classList.remove('active');
+    }
+
+    function openTimerModal() {
+        unlockAudioEngine();
+        document.getElementById('timer_finish_banner').style.display = 'none';
+        document.getElementById('timer_lock_overlay').classList.remove('active');
+        document.getElementById('timerModal').style.display = 'flex';
+        updateTimerDisplay();
+    }
+
+    function closeTimerModal(e) {
+        if (e.target.id === 'timerModal') {
+            document.getElementById('timerModal').style.display = 'none';
+        }
+    }
+
+    function closeTimerModalDirect() {
+        document.getElementById('timerModal').style.display = 'none';
+    }
+
+    function setupTimerSteps(data) {
+        pauseTimer();
+        timerSteps = [];
+
+        if (data.a.lab === "Вода") {
+            if (data.a.val > 0.001 && Math.round(data.a.t) > 0) {
+                timerSteps.push({ name: data.a.lab, sec: Math.round(data.a.t), initialSec: Math.round(data.a.t), vol: data.a.val });
+            }
+            if (data.m.val > 0.001 && Math.round(data.m.t) > 0) {
+                timerSteps.push({ name: data.m.lab, sec: Math.round(data.m.t), initialSec: Math.round(data.m.t), vol: data.m.val });
+            }
+        } else {
+            if (data.m.val > 0.001 && Math.round(data.m.t) > 0) {
+                timerSteps.push({ name: data.m.lab, sec: Math.round(data.m.t), initialSec: Math.round(data.m.t), vol: data.m.val });
+            }
+            if (data.a.val > 0.001 && Math.round(data.a.t) > 0) {
+                timerSteps.push({ name: data.a.lab, sec: Math.round(data.a.t), initialSec: Math.round(data.a.t), vol: data.a.val });
+            }
+        }
+
+        currentStepIndex = 0;
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        if (timerSteps.length === 0) return;
+
+        const currentStep = timerSteps[currentStepIndex];
+        const modalBox = document.getElementById('timer_modal_box');
+        const badge = document.getElementById('modal_timer_badge');
+        const compName = document.getElementById('modal_timer_comp_name');
+        const display = document.getElementById('modal_timer_display');
+        const nextInfo = document.getElementById('modal_timer_next_info');
+        const circleProg = document.getElementById('timer_circle_progress');
+
+        // Элементы общей партии
+        const batchText = document.getElementById('batch_tracker_text');
+        const batchFill = document.getElementById('batch_progress_fill');
+
+        badge.innerText = `ЭТАП ${currentStepIndex + 1} ИЗ ${timerSteps.length}`;
+        compName.innerText = currentStep.name;
+
+        // Цветовая тема HUD
+        modalBox.classList.remove('theme-water', 'theme-galit', 'theme-nitrate');
+        const cleanName = currentStep.name.toLowerCase();
+        if (cleanName.includes('вод')) {
+            modalBox.classList.add('theme-water');
+            circleProg.style.stroke = "var(--cyan)";
+        } else if (cleanName.includes('галит')) {
+            modalBox.classList.add('theme-galit');
+            circleProg.style.stroke = "var(--gold)";
+        } else if (cleanName.includes('нитрат')) {
+            modalBox.classList.add('theme-nitrate');
+            circleProg.style.stroke = "var(--nitrate-color)";
+        }
+
+        // Аварийное мигание при <= 10 сек
+        if (currentStep.sec <= 10 && currentStep.sec > 0) {
+            modalBox.classList.add('is-danger');
+            circleProg.style.stroke = "var(--red)";
+        } else {
+            modalBox.classList.remove('is-danger');
+        }
+
+        const m = Math.floor(currentStep.sec / 60);
+        const s = currentStep.sec % 60;
+        display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+        // Расчёт заполнения кольца
+        let fraction = 1;
+        if (currentStep.initialSec > 0) {
+            fraction = currentStep.sec / currentStep.initialSec;
+            circleProg.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - fraction);
+        } else {
+            circleProg.style.strokeDashoffset = 0;
+        }
+
+        // Общая партия сверху
+        let totalBatchVol = 0;
+        let pumpedBatchVol = 0;
+        timerSteps.forEach((st, idx) => {
+            totalBatchVol += st.vol || 0;
+            if (idx < currentStepIndex) {
+                pumpedBatchVol += st.vol || 0;
+            } else if (idx === currentStepIndex && st.initialSec > 0) {
+                const f = st.sec / st.initialSec;
+                pumpedBatchVol += (1 - f) * (st.vol || 0);
+            }
+        });
+        const totalBatchPct = totalBatchVol > 0 ? ((pumpedBatchVol / totalBatchVol) * 100).toFixed(0) : 0;
+        batchText.innerText = `${pumpedBatchVol.toFixed(2)} / ${totalBatchVol.toFixed(2)} м³ (${totalBatchPct}%)`;
+        batchFill.style.width = totalBatchPct + '%';
+
+        if (currentStepIndex + 1 < timerSteps.length) {
+            const nextStep = timerSteps[currentStepIndex + 1];
+            nextInfo.innerHTML = `Далее: <b>${nextStep.name}</b> (${fmt.time(nextStep.initialSec)})`;
+        } else {
+            nextInfo.innerHTML = `Финальный компонент процесса`;
+        }
+    }
+
+    function startTimer() {
+        if (timerSteps.length === 0 || timerInterval) return;
+
+        unlockAudioEngine();
+        document.getElementById('timer_finish_banner').style.display = 'none';
+        document.getElementById('modal_btn_start').style.display = 'none';
+        document.getElementById('modal_btn_pause').style.display = 'inline-block';
+
+        requestWakeLock();
+
+        const compKey = getSoundKeyByCompName(timerSteps[currentStepIndex].name);
+        if (compKey) playCustomAudio(compKey);
+
+        timerInterval = setInterval(() => {
+            let currentStep = timerSteps[currentStepIndex];
+
+            if (currentStep.sec > 0) {
+                currentStep.sec--;
+                updateTimerDisplay();
+
+                // Обратный звуковой отсчет 3, 2, 1
+                if (currentStep.sec === 3 || currentStep.sec === 2 || currentStep.sec === 1) {
+                    playBeepTone(920, 80);
+                    if (navigator.vibrate) navigator.vibrate(80);
+                }
+            }
+
+            if (currentStep.sec <= 0) {
+                if (currentStepIndex + 1 < timerSteps.length) {
+                    currentStepIndex++;
+                    const nextName = timerSteps[currentStepIndex].name;
+                    updateTimerDisplay();
+                    triggerStepTransition(nextName);
+                } else {
+                    pauseTimer();
+                    updateTimerDisplay();
+                    triggerFinalComplete();
+                }
+            }
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('modal_btn_start').style.display = 'inline-block';
+            document.getElementById('modal_btn_pause').style.display = 'none';
+            releaseWakeLock();
+        }
+    }
+
+    function resetTimer() {
+        pauseTimer();
+        document.getElementById('timer_finish_banner').style.display = 'none';
+        timerSteps.forEach(step => step.sec = step.initialSec);
+        currentStepIndex = 0;
+        updateTimerDisplay();
+    }
+
+    function triggerStepTransition(nextCompName) {
+        if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+        const nextKey = getSoundKeyByCompName(nextCompName);
+        if (nextKey) playCustomAudio(nextKey);
+    }
+
+    function triggerFinalComplete() {
+        if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 700]);
+        document.getElementById('timer_finish_banner').style.display = 'block';
+        playCustomAudio('finish');
+    }
+
+    /* ---------------- НАСТРОЙКИ (ВРЕМЯ + ДОБАВКИ) ---------------- */
+    function toggleModal() {
+        const modal = document.getElementById('infoModal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function openSettings() {
+        loadSettingsInputs();
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+
+    function closeSettings(e) {
+        if (e.target.id === 'settingsModal') {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+    }
+
+    function saveSettings() {
+        const tWater = parseFloat(document.getElementById('setting_t_water').value);
+        const tGalit = parseFloat(document.getElementById('setting_t_galit').value);
+        const tNitrate = parseFloat(document.getElementById('setting_t_nitrate').value);
+
+        if (isNaN(tWater) || isNaN(tGalit) || isNaN(tNitrate)) {
+            alert("Пожалуйста, введите корректные числа времени");
+            return;
+        }
+
+        CONST.time.water = tWater;
+        CONST.time.galit = tGalit;
+        CONST.time.nitrate = tNitrate;
+        localStorage.setItem('t_water', tWater);
+        localStorage.setItem('t_galit', tGalit);
+        localStorage.setItem('t_nitrate', tNitrate);
+
+        let newChemLow = [];
+        for (let i = 0; i < 3; i++) {
+            const name = document.getElementById(`chem_low_name_${i}`).value.trim();
+            const rate = parseFloat(document.getElementById(`chem_low_rate_${i}`).value) || 0;
+            newChemLow.push({ name: name, rate: rate, basis: 'total' });
+        }
+        CONST.chem.low = newChemLow;
+        localStorage.setItem('chem_low_cfg', JSON.stringify(newChemLow));
+
+        let newChemHigh = [];
+        for (let i = 0; i < 3; i++) {
+            const name = document.getElementById(`chem_high_name_${i}`).value.trim();
+            const rate = parseFloat(document.getElementById(`chem_high_rate_${i}`).value) || 0;
+            const basis = (i === 2) ? 'nitrate' : 'total';
+            newChemHigh.push({ name: name, rate: rate, basis: basis });
+        }
+        CONST.chem.high = newChemHigh;
+        localStorage.setItem('chem_high_cfg', JSON.stringify(newChemHigh));
+
+        document.getElementById('settingsModal').style.display = 'none';
+        if (currentAppMode === 'make') calculate(); else calculateCorr();
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('Ошибка SW:', err));
+        });
+    }
+</script>
+</body>
+</html>
