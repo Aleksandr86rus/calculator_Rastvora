@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030307">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+
+    <title>Калькулятор МАКСИМ • ЦЕХ №4</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800;900&display=swap');
+
+        :root {
+            --bg-main: #05060b;
+            --bg-card: rgba(14, 16, 28, 0.75);
+            --bg-card-sub: rgba(22, 26, 45, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.09);
+            --cyan: #00f2ff;
+            --cyan-glow: rgba(0, 242, 255, 0.35);
+            --gold: #ffbe1a;
+            --gold-glow: rgba(255, 190, 26, 0.35);
+            --nitrate-color: #d946ef;
+            --nitrate-glow: rgba(217, 70, 239, 0.35);
+            --green: #0cf3a9;
+            --green-glow: rgba(12, 243, 169, 0.35);
+            --red: #ff334b;
+            --red-glow: rgba(255, 51, 75, 0.45);
+            --text-p: #ffffff;
+            --text-s: rgba(255, 255, 255, 0.55);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body {
+            background:
+                linear-gradient(rgba(0,242,255,0.035) 1px, transparent 1px) 0 0 / 100% 28px,
+                linear-gradient(90deg, rgba(0,242,255,0.035) 1px, transparent 1px) 0 0 / 28px 100%,
+                var(--bg-main);
+            min-height: 100vh;
+            padding: calc(18px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+            color: var(--text-p); display: flex; justify-content: center;
+            overflow-x: hidden; letter-spacing: -0.01em; position: relative;
+        }
+
+        body::before, body::after {
+            content: ''; position: fixed; width: 360px; height: 360px;
+            filter: blur(90px); border-radius: 50%; z-index: -1; opacity: 0.12;
+            animation: float 16s infinite alternate ease-in-out; pointer-events: none;
+        }
+        body::before { background: var(--cyan); top: -8%; left: -12%; }
+        body::after { background: #8c4bff; bottom: -10%; right: -12%; animation-delay: -8s; }
+
+        @keyframes float { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(60px,40px) scale(1.15); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .app-wrapper { width: 100%; max-width: 460px; animation: fadeInUp 0.5s var(--ease-out); z-index: 1; position: relative; }
+
+        /* Иконки */
+        .ico { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; flex-shrink: 0; }
+        .ico svg { width: 100%; height: 100%; display: block; }
+        .btn-icon .ico { width: 20px; height: 20px; vertical-align: middle; }
+        .btn-ctrl-timer .ico { width: 14px; height: 14px; vertical-align: -2px; }
+
+        header {
+            background: var(--bg-card); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border); padding: 16px 20px; border-radius: 22px; margin-bottom: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        header h1 {
+            font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.14em;
+            display: flex; align-items: center; gap: 8px;
+            background: linear-gradient(90deg, #ffffff 0%, var(--cyan) 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        header h1::before {
+            content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+            -webkit-text-fill-color: initial;
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 4px; }
+        .btn-icon {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            width: 42px; height: 42px; border-radius: 13px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s; color: #fff;
+        }
+        .btn-icon:hover { background: rgba(0, 242, 255, 0.12); border-color: var(--cyan); }
+        .btn-icon:active { transform: scale(0.94); }
+
+        .main-card {
+            background: var(--bg-card); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            padding: 22px 18px; border-radius: 28px; border: 1px solid var(--glass-border);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+            position: relative;
+        }
+        .main-card::before {
+            content: ''; position: absolute; inset: -1px; border-radius: 29px; padding: 1px;
+            background: linear-gradient(135deg, rgba(0,242,255,0.5), transparent 40%, transparent 60%, rgba(140,75,255,0.5));
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Переключатель режимов */
+        .mode-switcher {
+            display: flex; position: relative; background: rgba(0,0,0,0.5); border-radius: 16px;
+            padding: 4px; margin-bottom: 20px; border: 1px solid var(--glass-border);
+        }
+        .mode-indicator {
+            position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
+            border-radius: 12px; background: linear-gradient(135deg, #00f2ff 0%, #00b4d8 100%);
+            box-shadow: 0 4px 18px var(--cyan-glow);
+            transition: transform 0.35s var(--ease-out); z-index: 0;
+        }
+        .mode-switcher.corr .mode-indicator { transform: translateX(100%); }
+        .mode-btn {
+            flex: 1; padding: 12px 6px; border-radius: 12px; border: none; background: transparent;
+            color: var(--text-s); font-weight: 800; font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.06em; cursor: pointer; transition: color 0.25s, transform 0.2s; position: relative; z-index: 1;
+        }
+        .mode-btn.active { color: #030810; }
+        .mode-btn:active { transform: scale(0.97); }
+
+        .inputs-group { display: flex; gap: 12px; margin-bottom: 16px; }
+        .input-box { flex: 1; }
+        .input-box.vol { flex: 1.45; }
+
+        label { display: block; margin-bottom: 8px; font-size: 10px; font-weight: 800; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.12em; padding-left: 4px; }
+
+        .field-wrap { position: relative; display: flex; align-items: center; border-radius: 18px; transition: all 0.25s var(--ease-out); }
+        .field-wrap:focus-within { box-shadow: 0 0 25px var(--cyan-glow); }
+        .field-wrap.warn { box-shadow: 0 0 22px var(--red-glow); }
+        .field-wrap.warn input { border-color: var(--red); color: var(--red); }
+        .field-prefix { position: absolute; left: 18px; font-size: 22px; font-weight: 900; color: var(--cyan); pointer-events: none; opacity: 0.9; font-family: 'JetBrains Mono', monospace; }
+
+        input {
+            width: 100%; height: 62px; background: rgba(0,0,0,0.55); border: 1px solid var(--glass-border);
+            border-radius: 18px; padding: 0 18px; color: #fff; font-size: 23px; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace; transition: all 0.25s var(--ease-out);
+        }
+        input.density-input { padding-left: 48px; color: var(--cyan); }
+        input:focus { border-color: var(--cyan); background: rgba(0, 242, 255, 0.05); }
+
+        .clear-btn {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.08); border: none; color: var(--text-s); font-size: 18px;
+            width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: none;
+            align-items: center; justify-content: center; z-index: 2;
+        }
+
+        /* Плашка незавершённой выдачи */
+        .resume-box {
+            display: none; margin-bottom: 12px; padding: 14px 16px; border-radius: 18px;
+            background: rgba(255,190,26,0.08); border: 1px solid rgba(255,190,26,0.45);
+        }
+        .resume-text { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.5; margin-bottom: 10px; }
+        .resume-text b { color: var(--gold); }
+        .resume-actions { display: flex; gap: 8px; }
+        .btn-resume {
+            flex: 1; padding: 12px; border-radius: 14px; border: none; background: var(--gold); color: #000;
+            font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer;
+        }
+        .btn-resume-x {
+            flex: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--glass-border); background: transparent;
+            color: var(--text-s); font-weight: 800; font-size: 12px; text-transform: uppercase; cursor: pointer;
+        }
+
+        #results_container { display: flex; flex-direction: column; gap: 12px; }
+
+        .result-item {
+            padding: 18px; border-radius: 20px; background: var(--bg-card-sub);
+            border: 1px solid var(--glass-border); display: none;
+            animation: fadeInUp 0.4s var(--ease-out) both;
+            position: relative; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+            transition: transform 0.25s var(--ease-out), border-color 0.25s;
+        }
+        .result-item:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.16); }
+        .res-primary { border-left: 4px solid var(--cyan); background: linear-gradient(90deg, rgba(0,242,255,0.06) 0%, rgba(22,26,45,0.5) 100%); }
+        .res-secondary { border-left: 4px solid var(--gold); background: linear-gradient(90deg, rgba(255,190,26,0.06) 0%, rgba(22,26,45,0.5) 100%); }
+        .res-green { border-left: 4px solid var(--green); background: linear-gradient(90deg, rgba(12,243,169,0.06) 0%, rgba(22,26,45,0.5) 100%); }
+        .res-chem { border-left: 4px solid var(--gold); background: linear-gradient(90deg, rgba(255,190,26,0.05) 0%, rgba(22,26,45,0.5) 100%); }
+
+        /* Цвет карточки по этапу */
+        .stage-water { --accent: var(--cyan); }
+        .stage-galit { --accent: var(--gold); }
+        .stage-nitrate { --accent: var(--nitrate-color); }
+        .result-item[class*="stage-"] { border-left-color: var(--accent); }
+
+        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+        .res-label { font-size: 10px; text-transform: uppercase; color: var(--text-s); font-weight: 800; letter-spacing: 0.12em; }
+
+        .res-data, .sum-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+        .res-data span { font-size: 16px; font-weight: 600; opacity: 0.65; margin-left: 4px; font-family: 'Inter'; }
+
+        #status_initial { padding: 34px 20px; border: 1px dashed rgba(0,242,255,0.35); text-align: center; background: rgba(0,242,255,0.015); border-radius: 20px; }
+        .status-ready { font-size: 14px !important; color: var(--cyan); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .pulse-icon { font-size: 9px; animation: blink 1.4s infinite; filter: drop-shadow(0 0 6px var(--cyan)); }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Полоса соотношения */
+        .ratio-bar-wrap { display: none; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.6); margin: 4px 0 6px; border: 1px solid var(--glass-border); box-shadow: 0 0 14px rgba(0,242,255,0.15); }
+        .ratio-bar-inner { display: flex; height: 100%; width: 100%; }
+        .ratio-part-1 { background: var(--cyan); transition: width 0.4s; box-shadow: 0 0 12px var(--cyan-glow); }
+        .ratio-part-2 { background: var(--gold); transition: width 0.4s; box-shadow: 0 0 12px var(--gold-glow); }
+        .ratio-labels { display: none; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; margin-bottom: 10px; padding: 0 2px; }
+        .ratio-labels .rl-1 { color: var(--cyan); }
+        .ratio-labels .rl-2 { color: var(--gold); }
+
+        .tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; background: rgba(0,0,0,0.45); border-radius: 10px; font-size: 11px; color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.06); white-space: nowrap; }
+        .tag .ico { width: 13px; height: 13px; vertical-align: -2px; }
+
+        /* Добавки */
+        .chem-list { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 500; }
+        .chem-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed rgba(255,255,255,0.07); }
+        .chem-row:last-child { border-bottom: none; }
+        .chem-ico {
+            width: 30px; height: 30px; border-radius: 10px; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; color: var(--cyan); padding: 6px;
+        }
+        .chem-ico svg { width: 100%; height: 100%; display: block; }
+        .chem-name { flex: 1; font-weight: 600; color: rgba(255,255,255,0.8); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chem-val { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px; white-space: nowrap; }
+        .chem-val b { color: #fff; font-weight: 800; }
+        .chem-unit-l { color: var(--cyan); }
+        .chem-unit-kg { color: var(--gold); }
+        .chem-note { color: var(--nitrate-color); font-size: 10px; font-weight: 700; }
+        .chem-empty { font-size: 13px; color: var(--text-s); }
+        .chem-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
+        .chem-toggle {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); border-radius: 10px;
+            padding: 5px 10px; font-size: 10px; font-weight: 800; color: #fff; text-transform: uppercase;
+            letter-spacing: 0.06em; cursor: pointer;
+        }
+        .chem-toggle:active { transform: scale(0.97); }
+
+        .footer-summary { margin-top: 18px; padding: 16px 14px; background: rgba(0,0,0,0.45); border-radius: 20px; border: 1px solid var(--glass-border); display: none; justify-content: space-around; }
+        .sum-item { text-align: center; }
+        .sum-label { font-size: 9px; text-transform: uppercase; color: var(--text-s); letter-spacing: 0.12em; margin-bottom: 4px; font-weight: 800; }
+        .sum-val { font-size: 16px; }
+
+        .btn-open-timer-modal {
+            width: 100%; margin-top: 16px; padding: 16px;
+            background: linear-gradient(135deg, rgba(0,242,255,0.2) 0%, rgba(140,75,255,0.2) 100%);
+            border: 1px solid var(--cyan); border-radius: 18px; color: #fff; font-size: 13px; font-weight: 900;
+            text-transform: uppercase; cursor: pointer; letter-spacing: 0.1em; display: none;
+            box-shadow: 0 6px 25px rgba(0,242,255,0.25); transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+        }
+        .btn-open-timer-modal .ico { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+        .btn-open-timer-modal:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,242,255,0.4); }
+        .btn-open-timer-modal:active { transform: scale(0.97); }
+
+        .copyright { text-align: center; margin-top: 24px; font-family: 'Fira Sans', sans-serif; font-weight: 900; font-size: 11px; letter-spacing: 0.18em; color: #ffffff; text-transform: uppercase; opacity: 0.65; }
+
+        .btn-info-float {
+            position: fixed; bottom: 20px; right: 20px; width: 48px; height: 48px;
+            background: linear-gradient(135deg, #00f2ff 0%, #00a8ff 100%); border: none; border-radius: 50%;
+            color: #000; font-size: 20px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,242,255,0.4); z-index: 100; display: flex;
+            align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .btn-info-float:active { transform: scale(0.94); }
+
+        /* ТАЙМЕР */
+        .timer-modal-content {
+            --accent: var(--cyan);
+            background: #080913; border: 1px solid rgba(0,242,255,0.35); border-radius: 34px;
+            padding: 24px 18px 20px; width: 100%; max-width: 420px; position: relative; text-align: center;
+            box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 50px rgba(0,242,255,0.15);
+            animation: fadeInUp 0.35s var(--ease-out); transition: border-color 0.4s, box-shadow 0.4s; overflow: hidden;
+        }
+        .timer-modal-content.theme-water { --accent: var(--cyan); border-color: rgba(0,242,255,0.6); box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 50px var(--cyan-glow); }
+        .timer-modal-content.theme-galit { --accent: var(--gold); border-color: rgba(255,190,26,0.6); box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 50px var(--gold-glow); }
+        .timer-modal-content.theme-nitrate { --accent: var(--nitrate-color); border-color: rgba(217,70,239,0.6); box-shadow: 0 35px 90px rgba(0,0,0,0.95), 0 0 50px var(--nitrate-glow); }
+        .timer-modal-content.is-danger { --accent: var(--red); border-color: var(--red) !important; animation: dangerPulse 1s infinite alternate ease-in-out !important; }
+        @keyframes dangerPulse { 0% { box-shadow: 0 0 30px rgba(255,51,75,0.3); } 100% { box-shadow: 0 0 70px rgba(255,51,75,0.8), inset 0 0 30px rgba(255,51,75,0.2); } }
+
+        /* Пульс кольца во время работы, вспышка при завершении */
+        .timer-modal-content.is-running .timer-circle-progress { animation: ringPulse 2.4s ease-in-out infinite; }
+        @keyframes ringPulse {
+            0%, 100% { filter: drop-shadow(0 0 3px var(--accent)); }
+            50% { filter: drop-shadow(0 0 14px var(--accent)); }
+        }
+        .timer-modal-content.is-flash .timer-circle-wrap { animation: finishFlash 0.6s ease-in-out 5; }
+        @keyframes finishFlash {
+            0%, 100% { filter: none; }
+            50% { filter: drop-shadow(0 0 28px var(--green)); }
+        }
+
+        .batch-tracker { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 14px; padding: 8px 12px; margin-bottom: 12px; text-align: left; }
+        .batch-tracker-header { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-s); letter-spacing: 0.08em; margin-bottom: 5px; }
+        .batch-progress-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .batch-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--green)); box-shadow: 0 0 10px var(--green-glow); transition: width 0.3s linear; }
+
+        .timer-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+        .timer-badge { display: inline-block; padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--accent); }
+        .timer-ctrl-btns { display: flex; gap: 6px; align-items: center; }
+        .btn-ctrl-timer { background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); border-radius: 12px; padding: 6px 11px; font-size: 11px; font-weight: 800; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-ctrl-timer.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,242,255,0.12); }
+
+        .timer-circle-wrap { position: relative; width: 230px; height: 230px; margin: 4px auto 10px; display: flex; align-items: center; justify-content: center; }
+        .timer-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .timer-circle-ticks { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; stroke-dasharray: 2 12; }
+        .timer-circle-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 11; }
+        .timer-circle-progress { fill: none; stroke: var(--accent); stroke-width: 11; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear, stroke 0.4s; filter: drop-shadow(0 0 8px currentColor); }
+        .timer-inner-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+        .timer-comp-name { font-size: 15px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.1em; max-width: 170px; }
+        .timer-time-big { font-family: 'JetBrains Mono', monospace; font-size: 50px; font-weight: 900; color: #fff; letter-spacing: 1px; line-height: 1.05; margin: 4px 0 0; text-shadow: 0 0 24px rgba(255,255,255,0.25); }
+        .timer-next-info { font-size: 13px; color: var(--text-s); font-weight: 600; min-height: 18px; margin: 10px 0 16px; }
+        .timer-next-info b { color: var(--gold); }
+        .timer-finish-banner { display: none; padding: 14px; margin-bottom: 14px; border-radius: 16px; background: rgba(12,243,169,0.15); border: 1px solid var(--green); color: var(--green); font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; animation: fadeInUp 0.4s var(--ease-out); }
+        .timer-actions { display: flex; gap: 10px; justify-content: center; margin-bottom: 12px; }
+        .btn-t-act { flex: 1; padding: 15px; border-radius: 16px; border: none; font-weight: 900; font-size: 13px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn-t-act:active { transform: scale(0.97); }
+        .btn-t-start { background: linear-gradient(135deg, #00f2ff 0%, #00b4d8 100%); color: #000; box-shadow: 0 4px 18px var(--cyan-glow); }
+        .btn-t-pause { background: linear-gradient(135deg, #ffbe1a 0%, #ff9f1a 100%); color: #000; }
+        .btn-t-reset { background: rgba(255,255,255,0.08); color: #fff; }
+        .btn-t-close { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--glass-border); border-radius: 14px; color: var(--text-s); font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; }
+
+        /* БЛОКИРОВКА ТАЙМЕРА: на весь экран */
+        .timer-lock-overlay {
+            position: fixed; inset: 0; z-index: 10001; display: none;
+            flex-direction: column; align-items: center; justify-content: space-between;
+            padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+            background: #05060b;
+        }
+        .timer-lock-overlay.active { display: flex; }
+        .lock-top { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+        .lock-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 12px;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border);
+            font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-s);
+        }
+        .lock-comp-name { font-size: clamp(18px, 4vh, 28px); font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 0.1em; }
+        .lock-mid { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 0; }
+        .lock-time {
+            font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #fff;
+            font-size: min(30vw, 36vh); line-height: 1; letter-spacing: 0.02em; white-space: nowrap;
+            text-shadow: 0 0 40px rgba(0,242,255,0.35); font-variant-numeric: tabular-nums;
+        }
+        .lock-progress { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-s); font-weight: 700; }
+        .lock-next { font-size: 15px; color: var(--text-s); font-weight: 600; min-height: 18px; text-align: center; }
+        .lock-next b { color: var(--gold); }
+        .lock-bottom { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .lock-sub { font-size: 11px; color: var(--text-s); text-align: center; }
+        .btn-unlock {
+            width: 100%; padding: 18px; background: rgba(0,242,255,0.15); border: 1px solid var(--cyan);
+            border-radius: 16px; color: var(--cyan); font-weight: 900; font-size: 14px; text-transform: uppercase;
+            letter-spacing: 0.08em; cursor: pointer;
+        }
+        .btn-unlock:active { transform: scale(0.97); }
+
+        /* НАСТРОЙКИ */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 18px; }
+        .modal-content { background: #0a0b16; border: 1px solid var(--glass-border); border-radius: 28px; padding: 24px 20px; width: 100%; max-width: 460px; position: relative; max-height: 90vh; display: flex; flex-direction: column; overflow-y: auto; }
+
+        .settings-sec-title {
+            font-size: 12px; font-weight: 900; color: var(--cyan); text-transform: uppercase;
+            letter-spacing: 0.08em; margin: 24px 0 10px 0; border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .settings-sec-title .ico { width: 15px; height: 15px; }
+        .settings-hint { font-size: 11px; color: var(--text-s); margin: -6px 0 12px; line-height: 1.5; }
+
+        .time-setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); }
+        .time-setting-row label { font-size: 11px; font-weight: 800; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.1em; margin: 0; padding: 0; }
+        .time-input { width: 70px; height: 36px; text-align: center; font-size: 14px; font-weight: 700; border-radius: 12px; padding: 0; font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: #fff; }
+
+        .chem-setting-block { background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 16px; padding: 14px; margin-bottom: 12px; transition: opacity 0.3s, border-color 0.25s; }
+        .chem-setting-block:hover { border-color: rgba(0,242,255,0.2); }
+        .chem-setting-block.disabled { opacity: 0.4; }
+
+        .chem-block-header { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .chem-name-input { flex: 1; height: 38px; font-size: 13px; font-weight: 700; padding: 0 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: #fff; }
+        .chem-basis-tag { font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 8px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.08em; }
+        .chem-basis-tag.nitrate-tag { color: var(--nitrate-color); background: rgba(217,70,239,0.1); }
+
+        .chem-controls-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+
+        .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; }
+        .toggle-switch input { display: none; }
+        .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s; border: 1px solid var(--glass-border); }
+        .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.3s; }
+        .toggle-switch input:checked + .toggle-slider { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        .toggle-label { font-size: 10px; font-weight: 800; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.06em; }
+        .display-label { font-size: 10px; font-weight: 700; color: var(--text-s); margin-right: 4px; white-space: nowrap; }
+
+        .display-toggle { display: flex; height: 30px; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.04); flex-shrink: 0; margin-left: auto; }
+        .display-toggle-btn { padding: 0 14px; border: none; background: transparent; color: var(--text-s); font-size: 11px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .display-toggle-btn.active-l { background: var(--cyan); color: #000; }
+        .display-toggle-btn.active-kg { background: var(--gold); color: #000; }
+
+        .chem-values-row { display: flex; gap: 8px; align-items: center; }
+        .chem-val-group { flex: 1; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0 12px; height: 42px; }
+        .chem-val-group.liters-group { border-color: rgba(0,242,255,0.2); }
+        .chem-val-group.kg-group { border-color: rgba(255,190,26,0.2); }
+        .chem-val-label { font-size: 11px; font-weight: 900; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+        .chem-val-label.l-label { color: var(--cyan); }
+        .chem-val-label.kg-label { color: var(--gold); }
+        .chem-rate-input { width: 100%; height: 100%; font-size: 14px; font-weight: 700; padding: 0; text-align: right; border-radius: 0; border: none; background: transparent; color: #fff; font-family: 'JetBrains Mono', monospace; }
+        .chem-rate-input:focus { border: none; box-shadow: none; }
+
+        .save-btn { width: 100%; padding: 16px; background: var(--cyan); color: #000; border: none; border-radius: 14px; font-weight: 900; margin-top: 24px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; transition: transform 0.2s, box-shadow 0.2s; }
+        .save-btn:hover { box-shadow: 0 0 22px var(--cyan-glow); }
+        .save-btn:active { transform: scale(0.98); }
+        .btn-close-modal { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-s); font-size: 24px; cursor: pointer; z-index: 10; }
+        .btn-close-modal:hover { color: #fff; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+            body::before, body::after { animation: none; }
+            .timer-modal-content.is-running .timer-circle-progress { animation: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div id="calc_view">
+        <header>
+            <h1>КАЛЬКУЛЯТОР МАКСИМ • ЦЕХ № 4</h1>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="openSettings()" aria-label="Настройки"><span class="ico" data-icon="gear"></span></button>
+            </div>
+        </header>
+
+        <div class="main-card">
+            <div class="mode-switcher" id="mode_switcher">
+                <div class="mode-indicator"></div>
+                <button class="mode-btn active" id="tab_make" onclick="setAppMode('make')">Выдача раствора</button>
+                <button class="mode-btn" id="tab_corr" onclick="setAppMode('corr')">Корректировка</button>
+            </div>
+
+            <div id="inputs_make">
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label for="density_tail">Плотность</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">1.</span>
+                            <input type="number" id="density_tail" class="density-input" placeholder="00" inputmode="decimal">
+                        </div>
+                    </div>
+                    <div class="input-box vol">
+                        <label for="volume_input">Объём (м3)</label>
+                        <div class="field-wrap">
+                            <input type="text" id="volume_input" placeholder="0.00" inputmode="decimal">
+                            <button class="clear-btn" id="reset_btn_make" aria-label="Очистить">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="inputs_corr" style="display:none;">
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label for="corr_vol_curr">Объём сейчас (м3)</label>
+                        <div class="field-wrap"><input type="text" id="corr_vol_curr" placeholder="6.00" inputmode="decimal"><button class="clear-btn" id="reset_btn_corr" aria-label="Очистить">×</button></div>
+                    </div>
+                    <div class="input-box">
+                        <label for="corr_vol_target">Надо всего (м3)</label>
+                        <div class="field-wrap"><input type="text" id="corr_vol_target" placeholder="10.00" inputmode="decimal"></div>
+                    </div>
+                </div>
+                <div class="inputs-group">
+                    <div class="input-box">
+                        <label for="corr_d_curr">Было (плотность)</label>
+                        <div class="field-wrap"><span class="field-prefix">1.</span><input type="number" id="corr_d_curr" class="density-input" placeholder="00" inputmode="decimal"></div>
+                    </div>
+                    <div class="input-box">
+                        <label for="corr_d_target">Надо (цель)</label>
+                        <div class="field-wrap"><span class="field-prefix">1.</span><input type="number" id="corr_d_target" class="density-input" placeholder="00" inputmode="decimal"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resume_box" class="resume-box">
+                <div id="resume_text" class="resume-text"></div>
+                <div class="resume-actions">
+                    <button class="btn-resume" onclick="resumeSaved()">Продолжить</button>
+                    <button class="btn-resume-x" onclick="discardSaved()">Сбросить</button>
+                </div>
+            </div>
+
+            <div id="results_container">
+                <div id="status_initial" class="result-item" style="display:block;">
+                    <div class="res-label">Система активна</div>
+                    <div class="status-ready"><span class="pulse-icon">●</span> Максим готов к расчёту</div>
+                </div>
+                <div id="ratio_bar_wrap" class="ratio-bar-wrap">
+                    <div class="ratio-bar-inner"><div id="ratio_part_1" class="ratio-part-1"></div><div id="ratio_part_2" class="ratio-part-2"></div></div>
+                </div>
+                <div id="ratio_labels" class="ratio-labels">
+                    <span class="rl-1" id="ratio_lbl_1"></span>
+                    <span class="rl-2" id="ratio_lbl_2"></span>
+                </div>
+                <div id="res_main" class="result-item res-primary"></div>
+                <div id="res_alt" class="result-item res-secondary"></div>
+                <div id="res_corr_total" class="result-item res-green"></div>
+                <div id="res_chem" class="result-item res-chem"></div>
+            </div>
+
+            <div id="footer_area" class="footer-summary">
+                <div class="sum-item"><div class="sum-label" id="footer_label_time">Общее время</div><div id="total_time" class="sum-val">--</div></div>
+                <div class="sum-item"><div class="sum-label" id="footer_label_weight">Общий вес</div><div id="total_weight" class="sum-val" style="color:var(--green)">--</div></div>
+            </div>
+
+            <button id="btn_open_timer_modal" class="btn-open-timer-modal" onclick="openTimerModal()"><span class="ico" data-icon="clock"></span>Открыть таймер выдачи</button>
+            <div class="copyright">ЦЕХ № 4 • РСУ Горшковский </div>
+        </div>
+    </div>
+</div>
+
+<button class="btn-info-float" onclick="toggleInfoModal()" aria-label="О приложении">i</button>
+
+<!-- ТАЙМЕР -->
+<div id="timerModal" class="modal-overlay" onclick="closeTimerModal(event)">
+    <div id="timer_modal_box" class="timer-modal-content" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="closeTimerModalDirect()" aria-label="Закрыть">×</button>
+        <div class="batch-tracker">
+            <div class="batch-tracker-header"><span>Прогресс выдачи</span><span id="batch_tracker_text">0.0 / 0.0 м³</span></div>
+            <div class="batch-progress-bar"><div id="batch_progress_fill" class="batch-progress-fill"></div></div>
+        </div>
+        <div class="timer-top-bar">
+            <div id="modal_timer_badge" class="timer-badge">ЭТАП 1 ИЗ 2</div>
+            <div class="timer-ctrl-btns">
+                <button class="btn-ctrl-timer" onclick="lockTimerTouch()" aria-label="Заблокировать экран"><span class="ico" data-icon="lock"></span></button>
+                <button id="btn_voice" class="btn-ctrl-timer active" onclick="toggleVoice()" aria-label="Звук"></button>
+                <button class="btn-ctrl-timer" onclick="testVoice()">Тест</button>
+            </div>
+        </div>
+        <div class="timer-circle-wrap">
+            <svg class="timer-svg" viewBox="0 0 200 200">
+                <circle class="timer-circle-ticks" cx="100" cy="100" r="94"></circle>
+                <circle class="timer-circle-bg" cx="100" cy="100" r="84"></circle>
+                <circle id="timer_circle_progress" class="timer-circle-progress" cx="100" cy="100" r="84" stroke-dasharray="527.78" stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="timer-inner-content">
+                <div id="modal_timer_comp_name" class="timer-comp-name">ГАЛИТ 1.18</div>
+                <div id="modal_timer_display" class="timer-time-big">00:00</div>
+            </div>
+        </div>
+        <div id="modal_timer_next_info" class="timer-next-info">Далее: --</div>
+        <div id="timer_finish_banner" class="timer-finish-banner">✓ Выдача завершена</div>
+        <div class="timer-actions">
+            <button id="modal_btn_start" class="btn-t-act btn-t-start" onclick="startTimer()">Старт</button>
+            <button id="modal_btn_pause" class="btn-t-act btn-t-pause" onclick="pauseTimer()" style="display:none;">Пауза</button>
+            <button class="btn-t-act btn-t-reset" onclick="resetTimer()">Сброс</button>
+        </div>
+        <button class="btn-t-close" onclick="closeTimerModalDirect()">Свернуть таймер</button>
+    </div>
+</div>
+
+<!-- БЛОКИРОВКА ТАЙМЕРА (на весь экран) -->
+<div id="timer_lock_overlay" class="timer-lock-overlay">
+    <div class="lock-top">
+        <div class="lock-badge"><span class="ico" data-icon="lock"></span> Экран заблокирован</div>
+        <div id="lock_comp_name" class="lock-comp-name">--</div>
+    </div>
+    <div class="lock-mid">
+        <div id="lock_time" class="lock-time">00:00</div>
+        <div id="lock_progress" class="lock-progress"></div>
+        <div id="lock_next" class="lock-next"></div>
+    </div>
+    <div class="lock-bottom">
+        <div class="lock-sub">Защита от случайных нажатий</div>
+        <button class="btn-unlock" onclick="unlockTimerTouch()">Разблокировать</button>
+    </div>
+</div>
+
+<!-- НАСТРОЙКИ -->
+<div id="settingsModal" class="modal-overlay" onclick="closeSettings(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="document.getElementById('settingsModal').style.display='none'" aria-label="Закрыть">×</button>
+        <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span class="ico" data-icon="gear" style="color:var(--cyan)"></span> Настройки
+        </div>
+
+        <div class="settings-sec-title"><span class="ico" data-icon="clock"></span> ВРЕМЯ ЗАКАЧКИ 1 КУБА (СЕК)</div>
+        <div class="time-setting-row"><label for="setting_t_water">ВОДА 1.01</label><input type="number" id="setting_t_water" class="time-input"></div>
+        <div class="time-setting-row"><label for="setting_t_galit">ГАЛИТ 1.18</label><input type="number" id="setting_t_galit" class="time-input"></div>
+        <div class="time-setting-row" style="border-bottom:none;"><label for="setting_t_nitrate">НИТРАТ 1.48</label><input type="number" id="setting_t_nitrate" class="time-input"></div>
+
+        <div class="settings-sec-title" style="margin-top:16px;"><span class="ico" data-icon="drop"></span> ДОБАВКИ НА 1.00 ВОДА (НА 1 М³)</div>
+        <div class="settings-hint">Тумблер — вкл/выкл добавку. Л/КГ — что показывать в результатах. Впишите нормы:</div>
+        <div id="chem_water_rows"></div>
+
+        <div class="settings-sec-title"><span class="ico" data-icon="flask"></span> ДОБАВКИ ДО 1.18 (НА 1 М³)</div>
+        <div class="settings-hint">Расход каждой добавки на 1 м³ готового раствора:</div>
+        <div id="chem_low_rows"></div>
+
+        <div class="settings-sec-title"><span class="ico" data-icon="flask"></span> ДОБАВКИ ОТ 1.19 (НА 1 М³ / НИТРАТА)</div>
+        <div class="settings-hint">Добавки 1–3 от общего объёма. Кислота — только от литров нитрата:</div>
+        <div id="chem_high_rows"></div>
+
+        <button class="save-btn" onclick="saveSettings()">СОХРАНИТЬ НАСТРОЙКИ</button>
+    </div>
+</div>
+
+<!-- О ПРИЛОЖЕНИИ -->
+<div id="infoModal" class="modal-overlay" onclick="toggleInfoModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="btn-close-modal" onclick="document.getElementById('infoModal').style.display='none'" aria-label="Закрыть">×</button>
+        <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:10px;"><span style="color:var(--cyan)">●</span> О приложении</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text-s);">
+            • <b style="color:#fff">Калькулятор Максим:</b> Расчёт плотностей, объёмов, добавок реагентов, времени закачки.<br>
+            • <b style="color:#fff">Приложение:</b> Для быстрого подсчёта выдачи раствора.
+        </div>
+        <div style="margin-top:25px;padding-top:15px;border-top:1px solid var(--glass-border);text-align:center;font-size:12px;font-weight:800;">
+            <span style="color:var(--text-s);text-transform:uppercase;letter-spacing:1px;">Разработчик:</span>
+            <span style="color:var(--cyan);">Федосеенко М. Ю.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ========== SVG-ИКОНКИ ========== */
+    const svg = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    const ICON = {
+        gear:  svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/><circle cx="12" cy="12" r="7"/>'),
+        lock:  svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+        sound: svg('<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
+        mute:  svg('<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6"/>'),
+        clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+        weight:svg('<path d="M6 8h12l2 13H4z"/><circle cx="12" cy="5" r="2"/>'),
+        drop:  svg('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
+        salt:  svg('<path d="M12 2l8 4.6v9.2L12 20.4 4 15.8V6.6z"/><path d="M12 2v18.4M4 6.6l8 4.6 8-4.6"/>'),
+        flask: svg('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>'),
+        bolt:  svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>')
+    };
+    function getChemIcon(name){
+        const c=(name||'').toLowerCase();
+        if(c.includes('вод')) return ICON.drop;
+        if(c.includes('галит')) return ICON.salt;
+        if(c.includes('нитрат')) return ICON.flask;
+        if(c.includes('кисл')) return ICON.bolt;
+        return ICON.flask;
+    }
+    // Статичные иконки вставляются по data-icon
+    document.querySelectorAll('[data-icon]').forEach(el=>{ el.innerHTML = ICON[el.dataset.icon] || ''; });
+
+    let currentAppMode = 'make';
+    const D_INPUT = document.getElementById('density_tail');
+    const V_INPUT = document.getElementById('volume_input');
+    const RESET_MAKE = document.getElementById('reset_btn_make');
+    const CORR_V_CURR = document.getElementById('corr_vol_curr');
+    const CORR_V_TARG = document.getElementById('corr_vol_target');
+    const CORR_D_CURR = document.getElementById('corr_d_curr');
+    const CORR_D_TARG = document.getElementById('corr_d_target');
+    const RESET_CORR = document.getElementById('reset_btn_corr');
+    const INIT_STATUS = document.getElementById('status_initial');
+    const STATUS_DEFAULT = INIT_STATUS.innerHTML;
+    const FOOTER = document.getElementById('footer_area');
+    const BTN_TIMER = document.getElementById('btn_open_timer_modal');
+    const MODE_SWITCHER = document.getElementById('mode_switcher');
+
+    // ДЕФОЛТНЫЕ НАСТРОЙКИ
+    const DEFAULT_CHEM_WATER = [
+        { name:"Скимол", rate_l:1.0460251, rate_kg:1, display:'kg', enabled:true, basis:'total' },
+        { name:"Азол", rate_l:0.00970874, rate_kg:0.01, display:'kg', enabled:true, basis:'total' },
+        { name:"ГФ", rate_l:0.012276786, rate_kg:0.011, display:'kg', enabled:true, basis:'total' }
+    ];
+    const DEFAULT_CHEM_LOW = [
+        { name:"SCIMOL", rate_l:0.20920502, rate_kg:0.2, display:'kg', enabled:true, basis:'total' },
+        { name:"АЗОЛ", rate_l:0.00970874, rate_kg:0.01, display:'kg', enabled:true, basis:'total' },
+        { name:"ГФ-1", rate_l:0.012723214, rate_kg:0.0114, display:'kg', enabled:true, basis:'total' }
+    ];
+    const DEFAULT_CHEM_HIGH = [
+        { name:"SCIMOL", rate_l:5.23012552, rate_kg:5, display:'kg', enabled:true, basis:'total' },
+        { name:"Азол", rate_l:0.09708738, rate_kg:0.1, display:'kg', enabled:true, basis:'total' },
+        { name:"ГФ", rate_l:0.029464286, rate_kg:0.0264, display:'kg', enabled:true, basis:'total' },
+        { name:"Кислота", rate_l:0.277, rate_kg:0.31025, display:'kg', enabled:true, basis:'nitrate' }
+    ];
+
+    let CONST = {
+        time: {
+            water: parseFloat(localStorage.getItem('t_water')) || 60,
+            galit: parseFloat(localStorage.getItem('t_galit')) || 44,
+            nitrate: parseFloat(localStorage.getItem('t_nitrate')) || 44
+        },
+        chem: {
+            water: JSON.parse(localStorage.getItem('chem_water_cfg')||'null') || JSON.parse(JSON.stringify(DEFAULT_CHEM_WATER)),
+            low: JSON.parse(localStorage.getItem('chem_low_cfg')||'null') || JSON.parse(JSON.stringify(DEFAULT_CHEM_LOW)),
+            high: JSON.parse(localStorage.getItem('chem_high_cfg')||'null') || JSON.parse(JSON.stringify(DEFAULT_CHEM_HIGH))
+        }
+    };
+
+    let timerSteps = [];
+    let timer = { running:false, idx:0, baseSec:0, startedAt:0, lastBeep:null };
+    let timerInterval = null;
+    let wakeLock = null;
+    const TIMER_KEY = 'timer_state_v1';
+    let voiceEnabled = localStorage.getItem('voice_enabled') !== 'false';
+    const CIRC = 527.78;
+    let audioCtx = null;
+    const SOUNDS = { water:new Audio('water.mp3'), galit:new Audio('galit.mp3'), nitrate:new Audio('nitrate.mp3'), finish:new Audio('finish.mp3') };
+    Object.values(SOUNDS).forEach(a=>{a.preload='auto';});
+
+    function unlockAudio(){
+        if(!audioCtx){const C=window.AudioContext||window.webkitAudioContext;if(C)audioCtx=new C();}
+        if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+        Object.values(SOUNDS).forEach(a=>{a.play().then(()=>{a.pause();a.currentTime=0;}).catch(()=>{});});
+    }
+    function playBeep(f=880,d=80){if(!audioCtx)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.setValueAtTime(f,audioCtx.currentTime);g.gain.setValueAtTime(0.2,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+d/1000);o.start();o.stop(audioCtx.currentTime+d/1000);}catch(e){}}
+    function playSound(k){if(!voiceEnabled)return;const a=SOUNDS[k];if(!a)return;try{Object.values(SOUNDS).forEach(s=>{s.pause();s.currentTime=0;});a.currentTime=0;a.play().catch(()=>{});}catch(e){}}
+    function getSoundKey(n){const c=(n||'').toLowerCase();if(c.includes('вод'))return'water';if(c.includes('галит'))return'galit';if(c.includes('нитрат'))return'nitrate';return null;}
+
+    /* ========== НАСТРОЙКИ: БЛОКИ ДОБАВОК ========== */
+    function buildChemBlock(container, prefix, index, item, basisLabel) {
+        const isNit = item.basis === 'nitrate';
+        const tag = isNit ? '<span class="chem-basis-tag nitrate-tag">НА НИТРАТ</span>' : (basisLabel ? `<span class="chem-basis-tag">${basisLabel}</span>` : '');
+        const disp = item.display || 'kg';
+        const enabled = item.enabled !== false;
+
+        const block = document.createElement('div');
+        block.className = 'chem-setting-block' + (enabled ? '' : ' disabled');
+        block.id = `${prefix}_block_${index}`;
+        block.innerHTML = `
+            <div class="chem-block-header">
+                <input type="text" id="${prefix}_name_${index}" class="chem-name-input" placeholder="Добавка ${index+1}" value="${item.name||''}" aria-label="Название добавки ${index+1}">
+                ${tag}
+            </div>
+            <div class="chem-controls-row">
+                <label class="toggle-switch" aria-label="Вкл/выкл добавку ${index+1}">
+                    <input type="checkbox" id="${prefix}_enabled_${index}" ${enabled?'checked':''} onchange="toggleChemEnabled('${prefix}',${index})">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">${enabled?'ВКЛ':'ВЫКЛ'}</span>
+
+                <span class="display-label" style="margin-left:auto;">Показывать:</span>
+                <div class="display-toggle" id="${prefix}_disp_${index}">
+                    <button type="button" class="display-toggle-btn ${disp==='l'?'active-l':''}" data-unit="l" onclick="setDisplayUnit('${prefix}',${index},'l')">Л</button>
+                    <button type="button" class="display-toggle-btn ${disp==='kg'?'active-kg':''}" data-unit="kg" onclick="setDisplayUnit('${prefix}',${index},'kg')">КГ</button>
+                </div>
+            </div>
+            <div class="chem-values-row">
+                <div class="chem-val-group liters-group">
+                    <span class="chem-val-label l-label">Л:</span>
+                    <input type="number" step="any" id="${prefix}_l_${index}" class="chem-rate-input" placeholder="0" value="${item.rate_l>0?item.rate_l:''}">
+                </div>
+                <div class="chem-val-group kg-group">
+                    <span class="chem-val-label kg-label">КГ:</span>
+                    <input type="number" step="any" id="${prefix}_kg_${index}" class="chem-rate-input" placeholder="0" value="${item.rate_kg>0?item.rate_kg:''}">
+                </div>
+            </div>
+        `;
+        container.appendChild(block);
+    }
+
+    function toggleChemEnabled(prefix, index) {
+        const cb = document.getElementById(`${prefix}_enabled_${index}`);
+        const block = document.getElementById(`${prefix}_block_${index}`);
+        const label = block.querySelector('.toggle-label');
+        if (cb.checked) { block.classList.remove('disabled'); label.textContent = 'ВКЛ'; }
+        else { block.classList.add('disabled'); label.textContent = 'ВЫКЛ'; }
+    }
+
+    function setDisplayUnit(prefix, index, unit) {
+        const toggle = document.getElementById(`${prefix}_disp_${index}`);
+        toggle.querySelectorAll('.display-toggle-btn').forEach(b => {
+            b.classList.remove('active-l', 'active-kg');
+            if (b.dataset.unit === unit) b.classList.add(unit==='l' ? 'active-l' : 'active-kg');
+        });
+    }
+
+    function getDisplayUnit(prefix, index) {
+        const toggle = document.getElementById(`${prefix}_disp_${index}`);
+        if (!toggle) return 'kg';
+        const a = toggle.querySelector('.active-l,.active-kg');
+        return a ? a.dataset.unit : 'kg';
+    }
+
+    function loadSettingsInputs() {
+        document.getElementById('setting_t_water').value = CONST.time.water;
+        document.getElementById('setting_t_galit').value = CONST.time.galit;
+        document.getElementById('setting_t_nitrate').value = CONST.time.nitrate;
+
+        const wc = document.getElementById('chem_water_rows'); wc.innerHTML = '';
+        CONST.chem.water.forEach((it,i) => buildChemBlock(wc,'cw',i,it,'НА РАСТВОР'));
+
+        const lc = document.getElementById('chem_low_rows'); lc.innerHTML = '';
+        CONST.chem.low.forEach((it,i) => buildChemBlock(lc,'cl',i,it,'НА РАСТВОР'));
+
+        const hc = document.getElementById('chem_high_rows'); hc.innerHTML = '';
+        CONST.chem.high.forEach((it,i) => buildChemBlock(hc,'ch',i,it,i<3?'НА РАСТВОР':''));
+    }
+
+    /* ========== СОХРАНЕНИЕ ПОСЛЕДНИХ ЗНАЧЕНИЙ ========== */
+    function saveLastInputs(){
+        try{
+            localStorage.setItem('last_make', JSON.stringify({d:D_INPUT.value, v:V_INPUT.value}));
+            localStorage.setItem('last_corr', JSON.stringify({vc:CORR_V_CURR.value, vt:CORR_V_TARG.value, dc:CORR_D_CURR.value, dt:CORR_D_TARG.value}));
+        }catch(e){}
+    }
+    function restoreLastInputs(){
+        try{
+            const m=JSON.parse(localStorage.getItem('last_make')||'null');
+            if(m){D_INPUT.value=m.d||'';V_INPUT.value=m.v||'';}
+            const c=JSON.parse(localStorage.getItem('last_corr')||'null');
+            if(c){CORR_V_CURR.value=c.vc||'';CORR_V_TARG.value=c.vt||'';CORR_D_CURR.value=c.dc||'';CORR_D_TARG.value=c.dt||'';}
+        }catch(e){}
+    }
+
+    /* ========== ПОДСВЕТКА ПЛОТНОСТИ ВНЕ ДИАПАЗОНА ========== */
+    function checkDensity(el){
+        const v=el.value;
+        const d=parseFloat('1.'+v);
+        el.parentElement.classList.toggle('warn', v.length===2 && (d<1.0 || d>1.48));
+    }
+
+    window.onload = () => {
+        restoreLastInputs();
+        loadSettingsInputs();
+        updateVoiceBtn();
+        // Читаем сохранённую выдачу до пересчёта: расчёт сбрасывает таймер
+        const pending = loadTimerState();
+        setAppMode(currentAppMode);
+        if(pending && restoreTimer(pending)){
+            saveTimerState();
+            BTN_TIMER.style.display='block';
+            showResumeBox();
+        }
+        D_INPUT.focus();
+    };
+
+    window.addEventListener('pagehide', saveTimerState);
+    document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState==='visible' && timer.running){
+            tickTimer();
+            reqWake();
+        }
+    });
+
+    function setAppMode(m) {
+        currentAppMode = m;
+        document.getElementById('tab_make').classList.toggle('active', m==='make');
+        document.getElementById('tab_corr').classList.toggle('active', m==='corr');
+        MODE_SWITCHER.classList.toggle('corr', m==='corr');
+        document.getElementById('inputs_make').style.display = m==='make'?'block':'none';
+        document.getElementById('inputs_corr').style.display = m==='corr'?'block':'none';
+        if(m==='make'){D_INPUT.focus();calculate();}else{CORR_V_CURR.focus();calculateCorr();}
+    }
+
+    D_INPUT.addEventListener('input',function(){
+        if(this.value.length>2)this.value=this.value.slice(0,2);
+        if(this.value.length===2)V_INPUT.focus();
+        checkDensity(this);
+        calculate();
+    });
+    V_INPUT.addEventListener('input',function(){this.value=this.value.replace(',','.');calculate();});
+    RESET_MAKE.addEventListener('click',()=>{D_INPUT.value='';V_INPUT.value='';checkDensity(D_INPUT);calculate();D_INPUT.focus();});
+
+    CORR_V_CURR.addEventListener('input',function(){this.value=this.value.replace(',','.');calculateCorr();});
+    CORR_V_TARG.addEventListener('input',function(){this.value=this.value.replace(',','.');calculateCorr();});
+    CORR_D_CURR.addEventListener('input',function(){
+        if(this.value.length>2)this.value=this.value.slice(0,2);
+        if(this.value.length===2)CORR_D_TARG.focus();
+        checkDensity(this);
+        calculateCorr();
+    });
+    CORR_D_TARG.addEventListener('input',function(){
+        if(this.value.length>2)this.value=this.value.slice(0,2);
+        checkDensity(this);
+        calculateCorr();
+    });
+    RESET_CORR.addEventListener('click',()=>{
+        CORR_V_CURR.value='';CORR_V_TARG.value='';CORR_D_CURR.value='';CORR_D_TARG.value='';
+        checkDensity(CORR_D_CURR);checkDensity(CORR_D_TARG);
+        calculateCorr();CORR_V_CURR.focus();
+    });
+
+    const fmt = {
+        vol:(v)=>{if(!v||v<0.001)return"0<span>л</span>";let l=Math.round(v*1000);let m=Math.floor(l/1000);l=l%1000;return m===0?`${l}<span>л</span>`:`${m}<span>м3</span> ${l}<span>л</span>`;},
+        w:(kg)=>kg>=1000?`${(kg/1000).toFixed(3)} <span>т</span>`:`${Math.round(kg)} <span>кг</span>`,
+        time:(s)=>{s=Math.round(s);let m=Math.floor(s/60);let ss=s%60;return`${m}м ${ss.toString().padStart(2,'0')}с`;},
+        c3:(v)=>v.toFixed(3)
+    };
+
+    /* ========== ПОЛОСА СООТНОШЕНИЯ С ПРОЦЕНТАМИ ========== */
+    function setRatio(v1, v2, total){
+        const wrap=document.getElementById('ratio_bar_wrap');
+        const labels=document.getElementById('ratio_labels');
+        if(v1>0 && v2>0 && total>0){
+            const p1=(v1/total)*100, p2=(v2/total)*100;
+            wrap.style.display='block';
+            labels.style.display='flex';
+            document.getElementById('ratio_part_1').style.width=p1+'%';
+            document.getElementById('ratio_part_2').style.width=p2+'%';
+            document.getElementById('ratio_lbl_1').textContent=Math.round(p1)+'%';
+            document.getElementById('ratio_lbl_2').textContent=Math.round(p2)+'%';
+        }else{
+            wrap.style.display='none';
+            labels.style.display='none';
+        }
+    }
+
+    /* ========== РАСЧЁТ ДОБАВОК ========== */
+    function calcChem(arr, totalM3, nitrateM3) {
+        let r = [];
+        arr.forEach(it => {
+            if (!it.name || it.enabled === false) return;
+            const rl = it.rate_l || 0, rk = it.rate_kg || 0;
+            if (rl <= 0 && rk <= 0) return;
+            const base = (it.basis === 'nitrate') ? nitrateM3 : totalM3;
+            r.push({
+                name: it.name,
+                amt_l: rl * base,
+                amt_kg: rk * base,
+                display: it.display || 'kg',
+                hasL: rl > 0,
+                hasKg: rk > 0,
+                basis: it.basis
+            });
+        });
+        return r;
+    }
+
+    /* ========== СКРЫТЬ / ПОКАЗАТЬ ДОБАВКИ ========== */
+    let chemHidden = localStorage.getItem('chem_hidden') === 'true';
+    function chemBox(title, list){
+        return `<div class="chem-head"><div class="res-label">${title}</div><button class="chem-toggle" onclick="toggleChemList()">${chemHidden?'Показать':'Скрыть'}</button></div><div class="chem-list" style="${chemHidden?'display:none':''}">${renderChem(list)}</div>`;
+    }
+    function toggleChemList(){
+        chemHidden = !chemHidden;
+        try{ localStorage.setItem('chem_hidden', chemHidden); }catch(e){}
+        const l = document.querySelector('#res_chem .chem-list');
+        if(l) l.style.display = chemHidden ? 'none' : '';
+        const b = document.querySelector('#res_chem .chem-toggle');
+        if(b) b.textContent = chemHidden ? 'Показать' : 'Скрыть';
+    }
+
+    function renderChem(list) {
+        if(!list.length) return '<div class="chem-empty">Без добавок</div>';
+        return list.map(c => {
+            let val = '';
+            if (c.display === 'l' && c.hasL) {
+                val = `<span class="chem-unit-l"><b>${fmt.c3(c.amt_l)}</b> л</span>`;
+            } else if (c.display === 'kg' && c.hasKg) {
+                val = `<span class="chem-unit-kg"><b>${fmt.c3(c.amt_kg)}</b> кг</span>`;
+            } else if (c.hasL) {
+                val = `<span class="chem-unit-l"><b>${fmt.c3(c.amt_l)}</b> л</span>`;
+            } else if (c.hasKg) {
+                val = `<span class="chem-unit-kg"><b>${fmt.c3(c.amt_kg)}</b> кг</span>`;
+            }
+            const note = (c.basis === 'nitrate') ? ' <span class="chem-note"></span>' : '';
+            return `<div class="chem-row">
+                <span class="chem-ico">${getChemIcon(c.name)}</span>
+                <span class="chem-name">${c.name}${note}</span>
+                <span class="chem-val">${val}</span>
+            </div>`;
+        }).join('');
+    }
+
+    /* ========== ПОЭТАПНОЕ ПОЯВЛЕНИЕ РЕЗУЛЬТАТОВ ========== */
+    let lastRevealKey = null;
+    function replayReveal(){
+        let i=0;
+        document.querySelectorAll('#results_container .result-item').forEach(el=>{
+            if(el.id==='status_initial') return;
+            if(getComputedStyle(el).display==='none') return;
+            el.style.animation='none';
+            void el.offsetWidth;
+            el.style.animation='';
+            el.style.animationDelay=(i*70)+'ms';
+            i++;
+        });
+    }
+    function maybeReveal(key){
+        if(key!==lastRevealKey){ lastRevealKey=key; replayReveal(); }
+    }
+
+    /* ================= ВЫДАЧА ================= */
+    function calculate() {
+        saveLastInputs();
+        if (currentAppMode !== 'make') return;
+        const dR=D_INPUT.value, vR=V_INPUT.value, vol=parseFloat(vR);
+        RESET_MAKE.style.display=(dR||vR)?'flex':'none';
+        if(!dR||dR.length<2||!vR||isNaN(vol)||vol<=0){
+            toggleResults(false);BTN_TIMER.style.display='none';
+            setRatio(0,0,0);pauseTimer();timerSteps=[];return;
+        }
+
+        toggleResults(true);
+        document.getElementById('res_corr_total').style.display='none';
+        const d=parseFloat("1."+dR);
+        const DOM={main:document.getElementById('res_main'),alt:document.getElementById('res_alt'),chem:document.getElementById('res_chem')};
+        let data={m:{},a:{}}, chemList=[], mainStage, altStage;
+
+        if(d<=1.005){
+            data.m={val:vol,lab:"Вода",t:vol*CONST.time.water,w:vol*1000};
+            data.a={val:0,lab:"",t:0,w:0};
+            chemList=calcChem(CONST.chem.water,vol,0);
+            mainStage='water'; altStage=null;
+        } else if(d<=1.18){
+            data.m.val=vol*(d-1.0)/0.18;data.a.val=Math.max(0,vol-data.m.val);
+            data.m.lab="Галит 1.18";data.a.lab="Вода";
+            data.m.t=data.m.val*CONST.time.galit;data.a.t=data.a.val*CONST.time.water;
+            data.m.w=data.m.val*1180;data.a.w=data.a.val*1000;
+            chemList=calcChem(CONST.chem.low,vol,0);
+            mainStage='galit'; altStage='water';
+        } else {
+            data.m.val=Math.max(0,((1.48-d)/0.3)*vol);data.a.val=Math.max(0,vol-data.m.val);
+            data.m.lab="Галит 1.18";data.a.lab="Нитрат 1.48";
+            data.m.t=data.m.val*CONST.time.galit;data.a.t=data.a.val*CONST.time.nitrate;
+            data.m.w=data.m.val*1180;data.a.w=data.a.val*1480;
+            chemList=calcChem(CONST.chem.high,vol,data.a.val);
+            mainStage='galit'; altStage='nitrate';
+        }
+
+        renderCard(DOM.main,data.m,mainStage);renderCard(DOM.alt,data.a,altStage);
+        setRatio(data.m.val,data.a.val,vol);
+
+        DOM.chem.style.display='block';
+        DOM.chem.innerHTML=chemBox('Добавки', chemList);
+        document.getElementById('footer_label_time').innerText="Общее время";
+        document.getElementById('footer_label_weight').innerText="Общий вес";
+        document.getElementById('total_time').innerText=fmt.time(Math.round((data.m.t||0)+(data.a.t||0)));
+        document.getElementById('total_weight').innerHTML=fmt.w((data.m.w||0)+(data.a.w||0));
+        setupTimerSteps(data);BTN_TIMER.style.display='block';
+        maybeReveal('m|'+dR+'|'+vR);
+    }
+
+    /* ================= КОРРЕКТИРОВКА ================= */
+    function calculateCorr() {
+        saveLastInputs();
+        if(currentAppMode!=='corr')return;
+        const vCR=CORR_V_CURR.value,vTR=CORR_V_TARG.value,dCR=CORR_D_CURR.value,dTR=CORR_D_TARG.value;
+        RESET_CORR.style.display=(vCR||vTR||dCR||dTR)?'flex':'none';
+        const v0=parseFloat(vCR),vt=parseFloat(vTR);
+        if(!vCR||isNaN(v0)||v0<=0||!vTR||isNaN(vt)||vt<=0||!dCR||dCR.length<2||!dTR||dTR.length<2){
+            toggleResults(false);BTN_TIMER.style.display='none';
+            setRatio(0,0,0);pauseTimer();timerSteps=[];return;
+        }
+
+        const d0=parseFloat("1."+dCR),dt=parseFloat("1."+dTR),dV=vt-v0;
+        const DOM={main:document.getElementById('res_main'),alt:document.getElementById('res_alt'),tot:document.getElementById('res_corr_total'),chem:document.getElementById('res_chem')};
+
+        if(dV<=0.001){
+            toggleResults(false);
+            INIT_STATUS.style.display='block';
+            INIT_STATUS.innerHTML=`<div class="res-label" style="color:var(--red)">ОШИБКА</div><div class="status-ready" style="color:var(--red)">Целевой объём должен быть больше</div>`;
+            return;
+        }
+
+        const tM=vt*dt,cM=v0*d0,rD=(tM-cM)/dV;
+        if(rD>1.4805){
+            const mx=(cM+dV*1.48)/vt;
+            toggleResults(false);
+            INIT_STATUS.style.display='block';
+            INIT_STATUS.innerHTML=`<div class="res-label" style="color:var(--red)">НЕВОЗМОЖНО</div><div style="font-size:13px;color:#fff;margin-top:8px;">Макс: <b style="color:var(--cyan)">${mx.toFixed(2)}</b></div>`;
+            return;
+        }
+        if(rD<0.9995){
+            const mn=(cM+dV*1.00)/vt;
+            toggleResults(false);
+            INIT_STATUS.style.display='block';
+            INIT_STATUS.innerHTML=`<div class="res-label" style="color:var(--red)">НЕВОЗМОЖНО</div><div style="font-size:13px;color:#fff;margin-top:8px;">Мин: <b style="color:var(--gold)">${mn.toFixed(2)}</b></div>`;
+            return;
+        }
+
+        toggleResults(true);
+        let c1={lab:'',val:0,t:0,w:0},c2={...c1};let chemList=[];
+        let altStage;
+        if(rD<=1.1801){
+            c1.val=(rD>=1.18)?dV:dV*(rD-1.00)/0.18;c2.val=Math.max(0,dV-c1.val);
+            c1.lab="Галит 1.18 (долить)";c2.lab="Вода (долить)";
+            c1.t=c1.val*CONST.time.galit;c2.t=c2.val*CONST.time.water;
+            c1.w=c1.val*1180;c2.w=c2.val*1000;
+            chemList=calcChem(CONST.chem.low,dV,0);
+            altStage='water';
+        }else{
+            c1.val=Math.max(0,((1.48-rD)/0.30)*dV);c2.val=Math.max(0,dV-c1.val);
+            c1.lab="Галит 1.18 (долить)";c2.lab="Нитрат 1.48 (долить)";
+            c1.t=c1.val*CONST.time.galit;c2.t=c2.val*CONST.time.nitrate;
+            c1.w=c1.val*1180;c2.w=c2.val*1480;
+            chemList=calcChem(CONST.chem.high,dV,c2.val);
+            altStage='nitrate';
+        }
+
+        renderCard(DOM.main,c1,'galit');renderCard(DOM.alt,c2,altStage);
+        setRatio(c1.val,c2.val,dV);
+
+        DOM.tot.style.display='block';
+        DOM.tot.innerHTML=`<div class="res-header"><div class="res-label" style="color:var(--green)">ИТОГО (${vt.toFixed(2)} м3)</div><div class="tag" style="background:rgba(12,243,169,0.1);color:var(--green)">Цель: 1.${dTR}</div></div><div class="res-data" style="color:var(--green);font-size:24px;">Долить: ${fmt.vol(dV)} <span style="font-size:14px;opacity:0.8;">(было ${v0.toFixed(2)} м3)</span></div>`;
+
+        DOM.chem.style.display='block';
+        DOM.chem.innerHTML=chemBox(`Реагенты на доливку (${dV.toFixed(2)} м3)`, chemList);
+        document.getElementById('footer_label_time').innerText="Время доливки";
+        document.getElementById('footer_label_weight').innerText="Вес доливки";
+        document.getElementById('total_time').innerText=fmt.time(Math.round(c1.t+c2.t));
+        document.getElementById('total_weight').innerHTML=fmt.w(c1.w+c2.w);
+
+        pauseTimer();timerSteps=[];
+        if(c2.lab.includes("Вода")&&c2.val>0.001)timerSteps.push({name:"Вода",sec:Math.round(c2.t),initialSec:Math.round(c2.t),vol:c2.val});
+        if(c1.val>0.001)timerSteps.push({name:"Галит 1.18",sec:Math.round(c1.t),initialSec:Math.round(c1.t),vol:c1.val});
+        if(c2.lab.includes("Нитрат")&&c2.val>0.001)timerSteps.push({name:"Нитрат 1.48",sec:Math.round(c2.t),initialSec:Math.round(c2.t),vol:c2.val});
+        initTimerFromSteps();BTN_TIMER.style.display='block';
+        maybeReveal('c|'+vCR+'|'+vTR+'|'+dCR+'|'+dTR);
+    }
+
+    /* ========== ПЛАВНАЯ СМЕНА ЦИФР ========== */
+    const lastNums = {};
+    const tweens = {};
+    function animateVol(card, target){
+        const el = card.querySelector('.res-data');
+        const key = card.id;
+        const from = lastNums[key];
+        lastNums[key] = target;
+        if(tweens[key]){ cancelAnimationFrame(tweens[key]); delete tweens[key]; }
+        if(!el || from === undefined || Math.abs(from - target) < 0.0005) return;
+        if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const start = performance.now(), dur = 450;
+        const step = (now) => {
+            const t = Math.min(1, (now - start) / dur);
+            const e = 1 - Math.pow(1 - t, 3);
+            el.innerHTML = fmt.vol(from + (target - from) * e);
+            if(t < 1) tweens[key] = requestAnimationFrame(step);
+            else delete tweens[key];
+        };
+        tweens[key] = requestAnimationFrame(step);
+    }
+
+    function renderCard(el,d,stage){
+        el.className = el.className.replace(/\s?stage-\w+/g,'').trim();
+        if(stage) el.classList.add('stage-'+stage);
+        if(!d.lab||d.val<0.001){el.style.display='none';delete lastNums[el.id];return;}
+        el.style.display='block';
+        el.innerHTML=`<div class="res-header"><div class="res-label">${d.lab}</div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;"><div class="tag"><span class="ico">${ICON.clock}</span>${fmt.time(d.t)}</div><div class="tag" style="background:rgba(255,255,255,0.06)"><span class="ico">${ICON.weight}</span>${fmt.w(d.w)}</div></div></div><div class="res-data">${fmt.vol(d.val)}</div>`;
+        animateVol(el, d.val);
+    }
+
+    function toggleResults(s){
+        if(!s){
+            INIT_STATUS.innerHTML=STATUS_DEFAULT;
+        }
+        INIT_STATUS.style.display=s?'none':'block';
+        FOOTER.style.display=s?'flex':'none';
+        document.querySelectorAll('#results_container .result-item:not(#status_initial)').forEach(c=>c.style.display=s?'block':'none');
+    }
+
+    /* ======== ЗВУК ======== */
+    function toggleVoice(){unlockAudio();voiceEnabled=!voiceEnabled;localStorage.setItem('voice_enabled',voiceEnabled);updateVoiceBtn();if(voiceEnabled)testVoice();}
+    function updateVoiceBtn(){
+        const b=document.getElementById('btn_voice');
+        if(voiceEnabled){ b.classList.add('active'); b.innerHTML=`<span class="ico">${ICON.sound}</span>`; }
+        else { b.classList.remove('active'); b.innerHTML=`<span class="ico">${ICON.mute}</span>`; }
+    }
+    function testVoice(){unlockAudio();if(navigator.vibrate)navigator.vibrate([100,50,100]);if(timerSteps.length>0){const k=getSoundKey(timerSteps[timer.idx].name);playSound(k||'finish');}else playSound('finish');}
+
+    /* ======== WAKE LOCK ======== */
+    async function reqWake(){
+        if(!('wakeLock' in navigator) || wakeLock || document.visibilityState!=='visible') return;
+        try{
+            wakeLock=await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release',()=>{wakeLock=null;});
+        }catch(e){}
+    }
+    function relWake(){ if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
+
+    function lockTimerTouch(){document.getElementById('timer_lock_overlay').classList.add('active');}
+    function unlockTimerTouch(){document.getElementById('timer_lock_overlay').classList.remove('active');}
+    function openTimerModal(){unlockAudio();document.getElementById('timer_finish_banner').style.display='none';document.getElementById('timer_lock_overlay').classList.remove('active');document.getElementById('timerModal').style.display='flex';updateTimerUI();}
+    function closeTimerModal(e){if(e.target.id==='timerModal')document.getElementById('timerModal').style.display='none';}
+    function closeTimerModalDirect(){document.getElementById('timerModal').style.display='none';}
+
+    /* ======== ТАЙМЕР: ОТСЧЁТ ПО ЧАСАМ ======== */
+    function initTimerFromSteps(){
+        timer = { running:false, idx:0, baseSec: timerSteps.length ? timerSteps[0].initialSec : 0, startedAt:0, lastBeep:null };
+        hideResumeBox();
+        clearTimerState();
+    }
+
+    function remainingExact(){
+        if(!timerSteps.length) return 0;
+        if(!timer.running) return timer.baseSec;
+        return Math.max(0, timer.baseSec - (Date.now()-timer.startedAt)/1000);
+    }
+
+    function isFinished(){
+        return timerSteps.length>0 && !timer.running && timer.idx===timerSteps.length-1 && timer.baseSec<=0;
+    }
+
+    // Продвигает таймер по реальному времени. Возвращает 'finished', 'step' или null.
+    function advanceTimer(silent){
+        if(!timer.running) return null;
+        const now=Date.now();
+        let moved=false;
+        while(true){
+            const rem=timer.baseSec-(now-timer.startedAt)/1000;
+            if(rem>0) break;
+            if(timer.idx+1<timerSteps.length){
+                timer.startedAt += timer.baseSec*1000;
+                timer.idx++;
+                timer.baseSec = timerSteps[timer.idx].initialSec;
+                timer.lastBeep = null;
+                moved=true;
+                if(!silent){
+                    if(navigator.vibrate) navigator.vibrate([300,150,300]);
+                    const nk=getSoundKey(timerSteps[timer.idx].name);
+                    if(nk) playSound(nk);
+                }
+            } else {
+                timer.running=false; timer.baseSec=0;
+                return 'finished';
+            }
+        }
+        return moved?'step':null;
+    }
+
+    function freezeTimer(){
+        if(timer.running){
+            timer.baseSec=Math.max(0, timer.baseSec-(Date.now()-timer.startedAt)/1000);
+            timer.running=false;
+        }
+    }
+
+    function tickTimer(){
+        if(!timer.running) return;
+        const res=advanceTimer(false);
+        if(res==='finished'){ finishTimer(); return; }
+        if(res==='step') saveTimerState();
+        const sec=Math.ceil(remainingExact());
+        if(sec>=1 && sec<=3 && timer.lastBeep!==sec){
+            timer.lastBeep=sec;
+            playBeep(920,80);
+            if(navigator.vibrate) navigator.vibrate(80);
+        }
+        updateTimerUI();
+    }
+
+    function finishTimer(){
+        timer.running=false; timer.baseSec=0;
+        if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+        relWake();
+        const box=document.getElementById('timer_modal_box');
+        box.classList.remove('is-running');
+        box.classList.add('is-flash');
+        setTimeout(()=>box.classList.remove('is-flash'), 3200);
+        document.getElementById('modal_btn_start').style.display='inline-block';
+        document.getElementById('modal_btn_pause').style.display='none';
+        if(navigator.vibrate) navigator.vibrate([400,150,400,150,700]);
+        document.getElementById('timer_finish_banner').style.display='block';
+        playSound('finish');
+        clearTimerState();
+        updateTimerUI();
+    }
+
+    function setupTimerSteps(data){
+        pauseTimer();timerSteps=[];
+        if(data.a.lab==="Вода"){
+            if(data.a.val>0.001&&Math.round(data.a.t)>0)timerSteps.push({name:data.a.lab,sec:Math.round(data.a.t),initialSec:Math.round(data.a.t),vol:data.a.val});
+            if(data.m.val>0.001&&Math.round(data.m.t)>0)timerSteps.push({name:data.m.lab,sec:Math.round(data.m.t),initialSec:Math.round(data.m.t),vol:data.m.val});
+        }else{
+            if(data.m.val>0.001&&Math.round(data.m.t)>0)timerSteps.push({name:data.m.lab,sec:Math.round(data.m.t),initialSec:Math.round(data.m.t),vol:data.m.val});
+            if(data.a.val>0.001&&Math.round(data.a.t)>0)timerSteps.push({name:data.a.lab,sec:Math.round(data.a.t),initialSec:Math.round(data.a.t),vol:data.a.val});
+        }
+        initTimerFromSteps();
+        updateTimerUI();
+    }
+
+    function updateTimerUI(){
+        if(!timerSteps.length)return;
+        const cs=timerSteps[timer.idx], mb=document.getElementById('timer_modal_box');
+        const rem=remainingExact();
+        const secInt=Math.ceil(rem);
+        cs.sec=secInt;
+
+        document.getElementById('modal_timer_badge').innerText=`ЭТАП ${timer.idx+1} ИЗ ${timerSteps.length}`;
+        document.getElementById('modal_timer_comp_name').innerText=cs.name;
+        mb.classList.remove('theme-water','theme-galit','theme-nitrate');
+        const cn=cs.name.toLowerCase();
+        if(cn.includes('вод')) mb.classList.add('theme-water');
+        else if(cn.includes('галит')) mb.classList.add('theme-galit');
+        else if(cn.includes('нитрат')) mb.classList.add('theme-nitrate');
+        if(secInt<=10&&secInt>0) mb.classList.add('is-danger'); else mb.classList.remove('is-danger');
+
+        const m=Math.floor(secInt/60), s=secInt%60;
+        const timeStr=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        document.getElementById('modal_timer_display').innerText=timeStr;
+        document.getElementById('lock_time').innerText=timeStr;
+        document.getElementById('lock_comp_name').innerText=cs.name;
+
+        const frac = cs.initialSec>0 ? Math.max(0, Math.min(1, rem/cs.initialSec)) : 0;
+        document.getElementById('timer_circle_progress').style.strokeDashoffset = CIRC*(1-frac);
+
+        let tV=0,pV=0;
+        timerSteps.forEach((st,i)=>{
+            tV+=st.vol||0;
+            if(i<timer.idx) pV+=st.vol||0;
+            else if(i===timer.idx && st.initialSec>0) pV+=(1-frac)*(st.vol||0);
+        });
+        const pc=tV>0?((pV/tV)*100).toFixed(0):0;
+        const progText=`${pV.toFixed(2)} / ${tV.toFixed(2)} м³ (${pc}%)`;
+        document.getElementById('batch_tracker_text').innerText=progText;
+        document.getElementById('lock_progress').innerText=progText;
+        document.getElementById('batch_progress_fill').style.width=pc+'%';
+
+        const ni=document.getElementById('modal_timer_next_info');
+        if(timer.idx+1<timerSteps.length){
+            const ns=timerSteps[timer.idx+1];
+            ni.innerHTML=`Далее: <b>${ns.name}</b> (${fmt.time(ns.initialSec)})`;
+        } else {
+            ni.innerHTML=`Финальный компонент`;
+        }
+        document.getElementById('lock_next').innerHTML=ni.innerHTML;
+    }
+
+    function startTimer(){
+        if(!timerSteps.length||timer.running)return;
+        if(isFinished()) resetTimer();
+        unlockAudio();
+        const box=document.getElementById('timer_modal_box');
+        box.classList.remove('is-flash');
+        box.classList.add('is-running');
+        document.getElementById('timer_finish_banner').style.display='none';
+        document.getElementById('modal_btn_start').style.display='none';
+        document.getElementById('modal_btn_pause').style.display='inline-block';
+        timer.running=true;
+        timer.startedAt=Date.now();
+        timer.lastBeep=null;
+        reqWake();
+        const ck=getSoundKey(timerSteps[timer.idx].name);
+        if(ck) playSound(ck);
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval=setInterval(tickTimer,250);
+        saveTimerState();
+        updateTimerUI();
+    }
+
+    function pauseTimer(){
+        freezeTimer();
+        if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+        document.getElementById('timer_modal_box').classList.remove('is-running');
+        document.getElementById('modal_btn_start').style.display='inline-block';
+        document.getElementById('modal_btn_pause').style.display='none';
+        relWake();
+        if(timerSteps.length) timerSteps[timer.idx].sec=Math.ceil(timer.baseSec);
+        saveTimerState();
+    }
+
+    function resetTimer(){
+        pauseTimer();
+        document.getElementById('timer_finish_banner').style.display='none';
+        timer = { running:false, idx:0, baseSec: timerSteps.length ? timerSteps[0].initialSec : 0, startedAt:0, lastBeep:null };
+        timerSteps.forEach(s=>s.sec=s.initialSec);
+        clearTimerState();
+        updateTimerUI();
+    }
+
+    /* ======== СОХРАНЕНИЕ СОСТОЯНИЯ ТАЙМЕРА ======== */
+    function hasProgress(){
+        return timer.running || timer.idx>0 || timer.baseSec < timerSteps[0].initialSec - 0.5;
+    }
+
+    function saveTimerState(){
+        try{
+            if(!timerSteps.length || isFinished() || !hasProgress()){
+                localStorage.removeItem(TIMER_KEY);
+                return;
+            }
+            localStorage.setItem(TIMER_KEY, JSON.stringify({
+                steps: timerSteps.map(s=>({name:s.name, initialSec:s.initialSec, vol:s.vol})),
+                idx: timer.idx,
+                baseSec: timer.baseSec,
+                startedAt: timer.startedAt,
+                running: timer.running
+            }));
+        }catch(e){}
+    }
+
+    function clearTimerState(){
+        try{ localStorage.removeItem(TIMER_KEY); }catch(e){}
+    }
+
+    function loadTimerState(){
+        try{
+            const st=JSON.parse(localStorage.getItem(TIMER_KEY)||'null');
+            if(!st || !Array.isArray(st.steps) || !st.steps.length) return null;
+            return st;
+        }catch(e){ return null; }
+    }
+
+    function restoreTimer(st){
+        timerSteps = st.steps.map(x=>({
+            name: String(x.name),
+            sec: Number(x.initialSec)||0,
+            initialSec: Number(x.initialSec)||0,
+            vol: Number(x.vol)||0
+        }));
+        timer = {
+            running: !!st.running,
+            idx: Math.min(Math.max(0, st.idx|0), timerSteps.length-1),
+            baseSec: Number(st.baseSec)||0,
+            startedAt: Number(st.startedAt)||0,
+            lastBeep: null
+        };
+        const res=advanceTimer(true);
+        if(res==='finished'){
+            clearTimerState();
+            timerSteps.forEach(s=>s.sec=0);
+            timer.idx=timerSteps.length-1;
+            timer.baseSec=0;
+            return false;
+        }
+        freezeTimer();
+        timerSteps[timer.idx].sec=Math.ceil(timer.baseSec);
+        return true;
+    }
+
+    function showResumeBox(){
+        const s=timerSteps[timer.idx];
+        const sec=Math.ceil(timer.baseSec);
+        document.getElementById('resume_text').innerHTML=
+            `Незавершённая выдача: <b>${s.name}</b>, осталось ${fmt.time(sec)} (этап ${timer.idx+1} из ${timerSteps.length})`;
+        document.getElementById('resume_box').style.display='block';
+    }
+    function hideResumeBox(){
+        document.getElementById('resume_box').style.display='none';
+    }
+    function resumeSaved(){
+        hideResumeBox();
+        openTimerModal();
+    }
+    function discardSaved(){
+        hideResumeBox();
+        resetTimer();
+    }
+
+    /* ======== НАСТРОЙКИ ======== */
+    function toggleInfoModal(e){const m=document.getElementById('infoModal');m.style.display=(m.style.display==='flex')?'none':'flex';}
+    function openSettings(){loadSettingsInputs();document.getElementById('settingsModal').style.display='flex';}
+    function closeSettings(e){if(e.target.id==='settingsModal')document.getElementById('settingsModal').style.display='none';}
+
+    function readChem(prefix, count, basisArr) {
+        let arr = [];
+        for (let i = 0; i < count; i++) {
+            const name = document.getElementById(`${prefix}_name_${i}`).value.trim();
+            const rL = parseFloat(document.getElementById(`${prefix}_l_${i}`).value) || 0;
+            const rK = parseFloat(document.getElementById(`${prefix}_kg_${i}`).value) || 0;
+            const display = getDisplayUnit(prefix, i);
+            const enabled = document.getElementById(`${prefix}_enabled_${i}`).checked;
+            const basis = basisArr[i] || 'total';
+            arr.push({ name, rate_l: rL, rate_kg: rK, display, enabled, basis });
+        }
+        return arr;
+    }
+
+    function saveSettings() {
+        const tW=parseFloat(document.getElementById('setting_t_water').value);
+        const tG=parseFloat(document.getElementById('setting_t_galit').value);
+        const tN=parseFloat(document.getElementById('setting_t_nitrate').value);
+        if(isNaN(tW)||isNaN(tG)||isNaN(tN)){alert("Введите корректные числа");return;}
+
+        CONST.time.water=tW;CONST.time.galit=tG;CONST.time.nitrate=tN;
+        localStorage.setItem('t_water',tW);localStorage.setItem('t_galit',tG);localStorage.setItem('t_nitrate',tN);
+
+        CONST.chem.water=readChem('cw',3,['total','total','total']);
+        localStorage.setItem('chem_water_cfg',JSON.stringify(CONST.chem.water));
+
+        CONST.chem.low=readChem('cl',3,['total','total','total']);
+        localStorage.setItem('chem_low_cfg',JSON.stringify(CONST.chem.low));
+
+        CONST.chem.high=readChem('ch',4,['total','total','total','nitrate']);
+        localStorage.setItem('chem_high_cfg',JSON.stringify(CONST.chem.high));
+
+        document.getElementById('settingsModal').style.display='none';
+        lastRevealKey=null;
+        if(currentAppMode==='make')calculate();else calculateCorr();
+    }
+
+    if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});}
+</script>
+</body>
+</html>
